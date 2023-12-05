@@ -1,0 +1,20 @@
+Basin_ID,Basin,region,recess_days,det_coef,gw_rec_const,alpha_value
+1,Navaluenga,IMP,74,0.908,-0.024,0.976
+2,Matallana,IMP,42,0.989,-0.045,0.956
+3,Villarejo de Montalban,IMP,26,0.97,-0.052,0.95
+4,Peralejo de las Truchas,CRB,163,0.944,-0.007,0.993
+5,Priego Escabas,CRB,140,0.884,-0.006,0.994
+6,Santa Maria del Val,CRB,127,0.954,-0.013,0.987
+7,Jabalera,DTH,53,0.935,-0.035,0.966
+8,Huete,DTH,65,0.891,-0.022,0.978
+9,Torote,DTH,46,0.535,-0.039,0.962
+10,La Pueblanueva,DTH,31,0.928,-0.053,0.949
+11,Ventosa,DTL,79,0.903,-0.008,0.992
+12,La Peraleja,DTL,48,0.888,-0.055,0.947
+13,Villasequilla de Yepes,DTL,100,0.876,-0.012,0.988
+14,Valverde de los Arroyos,MIX,44,0.978,-0.056,0.945
+15,Malpica,MIX,33,0.956,-0.066,0.937
+16,Taravillas,MIX,85,0.915,-0.011,0.989
+17,Romanones,MIX,98,0.916,-0.008,0.992
+18,Priego Trabraque,MIX,90,0.892,-0.014,0.986
+19,Bujalaro,MIX,67,0.924,-0.012,0.988

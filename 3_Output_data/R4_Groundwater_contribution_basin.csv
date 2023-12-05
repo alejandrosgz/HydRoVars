@@ -1,0 +1,20 @@
+Basin,Basin_ID,Region,Alpha used,BFImax used,Estimated baseflow contribution
+Navaluenga,1,IMP,0.99,0.4,0.308
+Matallana,2,IMP,0.989,0.3,0.239
+Villarejo de Montalban,3,IMP,0.985,0.35,0.231
+Peralejo de las Truchas,4,CRB,0.995,0.6,0.513
+Priego Escabas,5,CRB,0.997,0.65,0.549
+Santa Maria del Val,6,CRB,0.997,0.7,0.417
+Jabalera,7,DTH,0.985,0.45,0.394
+Huete,8,DTH,0.993,0.55,0.476
+Torote,9,DTH,0.985,0.55,0.423
+La Pueblanueva,10,DTH,0.98,0.55,0.384
+Ventosa,11,DTL,0.996,0.6,0.555
+La Peraleja,12,DTL,0.995,0.6,0.36
+Villasequilla de Yepes,13,DTL,0.995,0.45,0.37
+Valverde de los Arroyos,14,MIX,0.98,0.2,0.182
+Malpica,15,MIX,0.975,0.35,0.278
+Taravillas,16,MIX,0.993,0.5,0.46
+Romanones,17,MIX,0.996,0.5,0.456
+Priego Trabraque,18,MIX,0.99,0.45,0.395
+Bujalaro,19,MIX,0.993,0.5,0.478

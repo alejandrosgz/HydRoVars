@@ -1,0 +1,872 @@
+---
+#title: "Soft_data_paper"
+#author: "Alejandro Sánchez Gómez"
+bibliography: Paper_soft_data_collection.bib
+highlight-style: zenburn
+format: 
+   docx: 
+     reference-doc: template.docx
+     fig-align: center
+   #html: 
+   # toc: true
+   # toc-depth: 4
+   # editor: visual
+---
+
+```{r Used_libraries}
+#| eval: true
+#| echo: false
+#| output: false
+
+#Install packages if needed
+
+#install.packages("readr")
+#install.packages("tidyverse")
+#install.packages("lubridate")
+#install.packages("plotly")
+#install.packages("patchwork")
+#install.packages("gt")
+
+library(readr)
+library(sf)
+library(tidyverse)
+library(lubridate)
+library(plotly)
+library(patchwork)
+library(gt)
+
+# Environment: set working directory to the main folder of the repository
+
+#setwd("......\Soft_data_collection_methodology")
+
+```
+
+```{r tables_format}
+#| eval: true
+#| echo: false
+#| output: false
+
+# https://www.anthonyschmidt.co/post/2020-06-03-making-apa-tables-with-gt/  #Source of this code
+apa <- function(x){#, title = " ") {
+  gt(x) %>%
+    tab_options(
+      table.border.top.color = "white",
+      heading.title.font.size = px(16),
+      table.font.size = px(14),
+      column_labels.border.top.width = 3,
+      column_labels.border.top.color = "black",
+      column_labels.border.bottom.width = 3,
+      column_labels.border.bottom.color = "black",
+      table_body.border.bottom.color = "black",
+      table.border.bottom.color = "white",
+      table.width = pct(100),
+      table.background.color = "white"
+    ) %>%
+    cols_align(align="center") %>%
+    tab_style(
+      style = list(
+        cell_borders(
+          sides = c("top", "bottom"),
+          color = "white",
+          weight = px(0.005)
+        ),
+        cell_text(
+          align="center"
+        ),
+        cell_fill(color = "white", alpha = NULL)
+      ),
+      locations = cells_body(
+        columns = everything(),
+        rows = everything()
+      )
+    ) %>%
+    #title setup
+    #tab_header(
+    #  title = html(title)  # html("<i>", title, "</i>")
+    #) %>%
+    opt_align_table_header(align = "left")
+}
+
+```
+
+```{r baseflow_filter_function}
+#| eval: true
+#| echo: false
+#| output: false
+
+   baseflow_sep <- function(df=NA, Q="Q",
+                            alpha=0.98,
+                            BFIma=0.5,
+                            method="two_param")
+     {
+     Q <- df[colnames(df) == Q][,1]
+     Q[is.na(Q)] <- -9999.9
+     R <- as.vector(matrix(data=NA, nrow=length(Q), ncol=1))
+     B <- as.vector(matrix(data=NA, nrow=length(Q), ncol=1))
+     R[1] <- 0
+     B[1] <- 0
+     
+     #Eckhardt (2005): How to construct recursive digital filters for baseflow separation (Hydrological Processes, 19, 507-515)
+                 for(i in 2:length(Q)){
+                   if(Q[i] != -9999.9){
+                     B[i] <- ((1-BFIma)*alpha * B[i-1] + (1-alpha)*BFIma* Q[i]) /
+                       (1-alpha*BFIma)
+                     if(B[i] > Q[i]){B[i] <-Q[i]} 
+                     R[i] <- Q[i]-B[i]
+                   } else {
+                     R[i] <- NA
+                     B[i] <- NA
+                          }
+                                     }
+     return(data.frame(B,R))
+     }
+
+```
+
+
+```{r}
+#| echo: false
+#| eval: false
+
+# Basins file creation
+
+# Input data: Shapefile with the delineated subbasins 
+subbasins <- read_sf("Used_files/GIS/Shapefiles/basins_studied.shp") %>% arrange(., id)
+# Changing column names
+subbasins_csv <- subbasins %>% rename(Basin_ID = id) %>% 
+#Calculating area
+mutate(area = st_area(.)) %>% 
+# Introducing the identifiers of the gauging stations for each subbasin (Manually)
+mutate(gauging_code = c(3231, 3049, 3211, 3001, 3045, 3040,
+       3249, 3172, 3193, 3251, 3030, 3173, 3164, 3165, 3212, 
+       3268, 3237, 3186, 3060)) %>% 
+# Spatial data is no longer necessary
+st_drop_geometry(.) %>% 
+# Ordering table
+.[,c("Basin", "Basin_ID", "area", "gauging_code", "region")]
+write.csv(x =subbasins_csv, file = "Used_files/Created_csv/1_basins_file.csv", row.names = F)
+```
+
+
+```{r}
+#| echo: false
+#| eval: false
+
+# Weather points identifier file creation
+
+# Input data: Shapefile with the delineated subbasins and shapefile with the weather grid points
+# Gauging points
+pcp_points <- read_sf("Used_files/GIS/Shapefiles/weather_grid_UTM.shp")
+# Subbasins 
+subbasins <- read_sf("Used_files/GIS/Shapefiles/basins_studied.shp") %>% arrange(., id)
+# Buffer created for subbasins (1 km distance). 
+subbasins_buffer <- st_buffer(subbasins, dist = 1000) 
+# Clipping grid points with the subbasins buffer (CRS must be the same).
+grid_points_clip <- st_intersection(pcp_points, subbasins_buffer[, c("id", "Basin", "geometry")])
+# Spatial data is no longer necessary, and a variable is renamed before saving
+grid_points_clip_csv <- grid_points_clip %>% st_drop_geometry(.) %>% rename(Basin_ID = id)
+write.csv(x = grid_points_clip_csv, file = "Used_files/Created_csv/2_ids_stations_file.csv", row.names = F)
+```
+
+```{r used_files}
+#| eval: true
+#| echo: false
+#| output: false
+
+# Importing crated files and datasets
+
+# File with basins data
+basins_file <- read.csv("Used_files/Created_csv/1_basins_file.csv") 
+# File with grid points identifiers 
+pcp_grid_points <-  read.csv("Used_files/Created_csv/2_ids_stations_file.csv") 
+# File with gauging data
+gauging_data_tagus <- read.csv("Used_files/Data/Gauging_data/afliq.csv", sep = ";") %>% 
+  tibble(.,"cod" = indroea, "date" = fecha, "obs_flow" = caudal) %>% 
+  .[, c("cod", "date", "obs_flow")] %>% mutate(date = dmy(date))
+ 
+```
+
+
+```{r Runoff_calculation}
+#| eval: true
+#| echo: false
+#| output: false
+
+# Runoff calculation
+
+# Gauging stations codes
+cods <- basins_file$gauging_code 
+# Drainage areas
+areas <- basins_file$area 
+obs_anual <-  list() 
+for(i in 1:length(cods)){
+  gaug_st <- filter(gauging_data_tagus, cod == cods[i],(year(date) %in% 2010:2018))
+  # Average annual flow (m³/s)
+  caud_anual <- gaug_st[,c("date", "obs_flow")] %>% group_by(year = year(date)) %>% 
+    summarise(., obs_m3 = mean(obs_flow)) %>% 
+  # Annual contribution (mm/year) 
+  mutate(obs_mm = (obs_m3*86400*365*1000)/ (areas[i])) %>% 
+   cbind(bas = i) %>% .[,c("bas", "year", "obs_mm")]
+  # Gauged data for all the basins
+  obs_anual[[i]] <- caud_anual 
+}
+# Basins exceptions
+# Basins 2 and 6 have data only from October 2010. The first row (2010) is therefore eliminated
+obs_anual[[2]] <- obs_anual[[2]][-1,]
+obs_anual[[6]] <- obs_anual[[6]][-1,]
+# Basin 14 have data only from July 2011. The first row (2011) is therefore eliminated
+obs_anual[[14]] <- obs_anual[[14]][-1,]
+```
+
+
+```{r Precipitation_calculation}
+#| eval: true
+#| echo: false
+#| output: false
+
+# Precipitation calculation
+
+# Precipitation points files path
+path <- "Used_files/Data/Climate_data_extracted/pcp_spain/"
+# File with grid points identifiers 
+pcp_grid_points <-  read.csv("Used_files/Created_csv/2_ids_stations_file.csv")
+# Creating dates for the entire period (1951-2019)
+init_date <- as.Date("1951-01-01")
+end_date <- as.Date("2019-12-31")
+dates <- seq(init_date, end_date, 1) 
+# Annual precipitation calculation
+pcp_bas_list <- list() 
+# i --> Basin ID
+for(i in 1:length(unique(pcp_grid_points$Basin_ID))){  
+  # Precipitations points inside Basin i
+  filt_st <- filter(pcp_grid_points, Basin_ID == i) 
+  stations <- filt_st[,1]
+  pcps_sts <- c()
+  # n --> Precipitation point identifier
+  for(n in 1:length(stations)){
+    # Total precipitation for each year in each point   
+    st_dat <- read_table(paste(path, stations[n], "_PCP.txt", sep = ""), skip = 1, col_names = F) %>% 
+      mutate(date = ymd(dates), pcp = X1) %>% .[,c("date", "pcp")] %>% group_by(year(date)) %>% 
+      summarise(pcp_year = sum(pcp)) 
+      colnames(st_dat) <- c("year", "pcp")
+    # Filtering with the study period
+    pcp_st <- filter(st_dat, year %in% 2010:2018) %>% .[,"pcp"] 
+    pcps_sts <- tibble(pcps_sts, pcp_st, .name_repair = "unique") 
+  }
+  # Basin average precipitation from all the precipitation points within  
+  pcp_bas <- pcps_sts %>% apply(., 1, mean) %>% cbind(year = c(2010:2018)) %>% 
+    tibble(year = .[,"year"], pcp_y = .[,"."]) %>% .[,c("year", "pcp_y")]  
+  pcp_bas_list[[i]] <- pcp_bas[, "pcp_y"] %>% cbind(year = c(2010:2018), bas = i)
+}
+```
+
+```{r Temperature_calculation}
+#| eval: true
+#| echo: false
+#| output: false
+
+# Temperature calculation
+
+   # Temperature points files path
+   path <- "Used_files/Data/Climate_data_extracted/tmp_spain/" 
+   # Creating dates for the entire period (1951-2019)
+   init_date <- as.Date("1951-01-01")
+   end_date <- as.Date("2019-12-31")
+   dates <- seq(init_date, end_date, 1) # A sequence of dates for the entire serie is created
+   tmp_grid_points <-  read.csv("Used_files/Created_csv/2_ids_stations_file.csv") %>% arrange(., Basin_ID)  # File with IDs, names, and location of the grid points, and subbasins data  
+   
+   # Loop for calculating the temperature of each basin trough the average of the annual temperature (Max, min, mean) for each station within the basin
+   tmp_bas_list <- list() #empty list 
+   for(i in 1:length(unique(tmp_grid_points$Basin_ID))){  # i --> Basin ID
+     filt_st_t <- filter(tmp_grid_points, Basin_ID == i)
+     stations_t <- filt_st_t[,1]
+     tmps <- c()
+     tmp_mins <- c()
+     tmp_maxs <- c()
+     tmp_means <- c()
+
+     for(n in 1:length(stations_t)){   # n --> Weather stations identifier within each basin
+       st_dat_t <- read.csv(paste(path, stations_t[n], "_TMP.txt", sep = ""), skip = 1,header = F) %>% 
+         mutate(date = ymd(dates), tmp_M = V1, tmp_m = V2) %>% .[,c("date", "tmp_M", "tmp_m")] %>% group_by(year(date)) %>% 
+         summarise(tmp_M = mean(tmp_M),tmp_m = mean(tmp_m), tmp_mean = (tmp_M + tmp_m) /2) %>% .[,c(1,3,2,4)]
+       colnames(st_dat_t) <- c("Year", "Average minimum temperature", "Average maximum temperature", "Mean temperature")
+       
+       tmp_min <- filter(st_dat_t, Year %in% 2010:2018) %>% .[,"Average minimum temperature"]
+       tmp_mins <- tibble(tmp_mins, tmp_min, .name_repair = "unique")    # Minimum temperature for each station 
+       tmp_max <- filter(st_dat_t, Year %in% 2010:2018) %>% .[,"Average maximum temperature"]
+       tmp_maxs <- tibble(tmp_maxs, tmp_max, .name_repair = "unique")    # Maximum temperature for each station 
+       tmp_mean <- filter(st_dat_t, Year %in% 2010:2018) %>% .[,"Mean temperature"]
+       tmp_means <- tibble(tmp_means, tmp_mean, .name_repair = "unique") # Mean temperature for each station 
+     }
+     tmp_bas_list[[i]] <- tibble(Year = c(2010:2018), 
+                                 Tmp_min = apply(tmp_mins, 1, mean),   # Minimun temperature for each basin
+                                 Tmp_Max = apply(tmp_maxs, 1, mean),   # Maximun temperature for each basin
+                                 Tmp_mean = apply(tmp_means, 1, mean)) # Mean temperature for each basin
+      }
+      
+      #With this data, the average values for the entire period has been calculated for each subbasins
+      # As subbasins 2, 6 and 14 only have gauged data from 2012-2018, average temperature has been calculated for this period.
+   
+      tmp_bas_list[[2]] <- tmp_bas_list[[2]][-c(1),]   # Shortening data for Basin 2
+      tmp_bas_list[[6]] <- tmp_bas_list[[6]][-c(1),]   # Shortening data for Basin 6
+      tmp_bas_list[[14]] <- tmp_bas_list[[14]][-c(1:2),] # Shortening data for Basin 14
+   
+      # Loop for calculating the average minimun, maximun and mean temperature for all the subbasins
+      mins <- c()
+      maxs <- c()
+      means <- c()
+      for(i in 1:length(tmp_bas_list)){
+       min <- mean(tmp_bas_list[[i]][[2]] )
+       mins <- c(mins, min)
+       max <- mean(tmp_bas_list[[i]][[3]] )
+       maxs <- c(maxs, max)
+       mean <- mean(tmp_bas_list[[i]][[4]] )
+       means <- c(means, mean)
+      }
+      
+      temperature_tibb <- tibble(Basin_ID = c(1:length(tmp_bas_list)), mins, maxs, means)
+```
+
+
+
+```{r Runoff_rate_calculation}
+#| eval: true
+#| echo: false
+#| output: false
+ 
+# Runoff rate calculation
+
+   anual_runoff_rate <- list() 
+   basin_runoff_rate <- list() 
+   basin_runoff_rates <- c()   
+   for(i in 1:length(pcp_bas_list)){
+    # List with the annual values
+    anual_runoff_rate[[i]] <- obs_anual[[i]] %>% left_join(pcp_bas_list[[i]], by = "year") %>% 
+                              mutate(Basin_ID = bas.x, Year = year, Pcp = pcp_y, 
+                                     Runoff = obs_mm, Runoff_rt = Runoff/Pcp) %>% 
+                              .[,c("Basin_ID", "Year", "Pcp", "Runoff", "Runoff_rt")] 
+    # Average precipitation, runoff and runoff coefficient values for the entire period
+    basin_runoff_rate[[i]] <- anual_runoff_rate[[i]] %>% summarise(Basin_ID = mean(Basin_ID), 
+                               Mean_pcp = mean(Pcp), Mean_runoff = mean(Runoff), 
+                               Runoff_rate = mean(Runoff_rt), Max_runoff_rate = max(Runoff_rt), 
+                               min_runoff_rate = min(Runoff_rt), Runoff_rate_sd = sd(Runoff_rt)) %>% 
+                               unlist(.) 
+    # Merge the average list values
+    basin_runoff_rates <- basin_runoff_rates %>% rbind(basin_runoff_rate[[i]]) 
+   }
+   
+```
+
+
+```{r Recession_constant_estimation}
+#| eval: true
+#| echo: false
+#| output: false
+ 
+# Groundwater recession constant and alpha estimations
+
+   # Performed for subbasin 5, Priego Escabas
+   prieg_esc <- gauging_data_tagus %>% filter(., cod == 3045) %>% 
+                filter(year(date) %in% 2010:2018)
+   # Performed for the Peak 1
+   peak_1_pres <- prieg_esc[c(980:1500),]
+   # Recession curve definition and regression
+   recession_curve <- tibble(flow = peak_1_pres$obs_flow[225:350], 
+                      day = seq(1, length(peak_1_pres$date[225:350]), 1))
+   reg_pk1 <- lm(log(recession_curve$flow)~recession_curve$day)
+   
+   Recession_constant <-  reg_pk1[[1]][[2]]
+   Intercept <- reg_pk1[[1]][[1]]
+   
+   #Recession constant for the Peak 3 is -0.0084 and 1.308 is the intercept. 
+   # alpha value equals to exp(-0.0084) = 0.992
+```
+
+
+
+
+## Soft data collection for realistic hydrological modelling: a reproducible methodology developed in R for estimating the runoff coefficient and the baseflow index.
+
+##### Alejandro Sánchez-Gómez\*^1^, Katrin Bieger^2^, Christoph Schürz^3^, Silvia Martínez-Pérez^1^, Hendrik Rathjens^4^, Eugenio Molina-Navarro^1^.
+
+####### ^1^ Department of Geology, Geography and Environment. University of Alcalá.
+
+####### ^2^ Department of Ecoscience. Aarhus University.
+
+####### ^3^ Department of Computational Landscape Ecology. Helmholtz Centre for Environmental Research.
+
+####### ^4^ Stone Environmental, Inc.
+
+### Abstract
+
+Hydrological models are useful tools for addressing water management challenges. However, sometimes model users do not necessarily have comprehensive knowledge of hydrological processes. This can lead to models with a misrepresentation of the reality behind them. Soft data can be used in a soft calibration process to ensure that the main hydrological processes are being realistically reproduced before addressing hard calibration. Thus, data of relevant hydrological variables are necessary to carry out this process. This work presents a soft data collection methodology developed in R, which allows to estimate two key hydrological variables: the runoff coefficient and the baseflow index. The code provided easily obtains the runoff coefficient for one or several subbasins with gridded precipitation data and streamflow records. The use of a baseflow filter is proposed to estimate the baseflow index, but rather than the usual automated methods, a supervised, semi-automatic procedure is proposed here to ensure an accurate hydrograph separation and consequently a realistic baseflow contribution estimation. The methodology has been tested in 19 subbasins of the Tagus River basin located in different geological regions, revealing its usefulness.
+
+
+Keywords: *Soft data*
+
+### Highligths
+
+- A soft data collection tool has been developed in R
+- It allows estimating the runoff coefficient and the baseflow index at catchment scale
+- Runoff coefficient can be obtained for multiple subbasins
+- Guidance is provided for realistic baseflow estimation.
+- Its usefulness has been tested in the Upper Tagus River basin (Spain)
+
+
+### 1. Introduction
+
+Hydrological models are extremely useful for addressing challenges in managing water resources and the availability of user-friendly interfaces facilitates their application [@gassman_applications_2014]. However, not all model users necessarily have comprehensive knowledge of hydrological processes, and thus they might rely on model outputs without the necessary critical thinking [@seibert_dialog_2002; @efstratiadis_one_2010].
+
+In particular, hydrological modelling applications sometimes present results which are solely based on analysing the performance of a certain metric (or metrics) for the calibrated variable (e.g., streamflow, evapotranspiration, etc.), without further discussing if the simulated hydrological processes in the model resemble the reality of the study area [@bahremand_hess_2016; @acero_triana_beyond_2019]. The problem of equifinality within modelling techniques is well known: unrealistic parameter values can provide statistically satisfactory simulations [@muleta_model_2012; @molina-navarro_impact_2017]. Thus, particularly at catchment scale, modellers should attempt to ensure that at least the main components in the water balance are properly represented. It should be also checked that the contribution of the different streamflow components (surface, lateral and groundwater contribution) resembles what is expected in the study area.
+
+Some researchers discussed this issue in recent years and proposed the use of soft calibration techniques in order to achieve more realistic hydrological models [e.g., @arnold_hydrological_2015], i.e., assessing model results against soft data, such as annual averages of the water balance components or the expected relative contribution of the different components of streamflow. Soft calibration can be followed by hard calibration, which would involve the comparison of simulated and observed time series of a certain variable. The works of Pfannerstill et al. [-@pfannerstill_how_2017] and Chawanda et al. [-@chawanda_mass_2020] are examples of successfully using soft data for calibration of hydrological models.
+
+Various types of information fit the definition of soft data; from a range of expected values for a model parameter to a maximum water level value based on historical records [@efstratiadis_one_2010]. Two key soft data variables are the runoff coefficient and the baseflow index [@blume_rainfallrunoff_2007], especially in Mediterranean regions. The runoff coefficient is the fraction of precipitation volume that becomes streamflow. It is not constant and depends on factors such as soil type, lithology, topography, or the characteristics of precipitation events. The runoff coefficient can also be used to estimate the evapotranspiration ratio, which is the main loss of the water balance in Mediterranean regions [@garcia-ruiz_jose_2011]. In contrast to precipitation and streamflow, measurements of actual evapotranspiration are rare at catchment scale. Thus, despite having some limitations, the runoff coefficient helps to understand the water balance of a basin. The runoff coefficient can be estimated for any area where precipitation and streamflow data are available. Even though both streamflow and precipitation data are available in Spain, studies estimating this variable in the literature are limited to specific rainfall events, focusing on the factors that influence runoff generation [e.g., @kirkby_influence_2002; @rodriguez-blanco_rainfallrunoff_2012]. To the best of our knowledge, there is a lack of studies analysing long time series that could be used for calibration purposes.
+
+Baseflow is the fraction of the streamflow that is released from natural water storage systems such as glaciers or aquifers, and therefore does not respond immediately to precipitation events. Even though streamflow released by the soil (i.e., lateral flow) is also delayed, its delay is smaller and it is not considered as baseflow. Groundwater is the main source of baseflow in Mediterranean areas, and it is responsible for maintaining streamflow during dry periods, which is essential for water supply, water quality and ecosystems functioning [@lopez-vera_groundwater_2012]. It is therefore a key element of the water balance, which can represent more than half of the basin water yield [@jodar_groundwater_2017; @sanchez-gomez_streamflow_2023]. Groundwater flow depends on factors such as lithology, topography, climate or soil type, among others. The baseflow index indicates the fraction of the total streamflow that originates from baseflow. This variable can be estimated through different methods, such as using hydrological models [@samper_hydrological_2015], mass-balance methods with chemical tracers [@ortega_using_2015], or applying numerical or graphical methods to streamflow records to perform a separation of its components (baseflow and direct runoff) [@custodio_hidrologisubterranea_1983; @lyne_stochastic_1979]. Various digital filters for this separation have been developed, allowing to estimate the baseflow index using streamflow data only [@arnold_automated_1999; @kang_baseflow_2022].
+
+Values of runoff coefficient or baseflow index for a certain catchment can be found in the literature if previous hydrological studies for that area exist. Some studies might also provide expected values for certain regions, depending on their climate and/or their hydrogeological characteristics [e.g., @custodio_hidrologisubterranea_1983]. However, a reliable soft calibration procedure would involve obtaining runoff coefficient and baseflow index estimates specifically for the catchment and time period of interest. This would help to ensure that the model is simulating the hydrological processes realistically, providing also a more robust starting point for the subsequent hard calibration. Thus, to avoid the issue of creating unrealistic hydrological models, there is a need to develop procedures and methodologies that derive soft data variables for a certain area and period, encouraging modellers to perform a soft calibration before hard calibration.
+
+However, obtaining values for these two indices in a particular catchment requires tedious work of data collection and processing. Regarding the runoff coefficient, it would involve the collection of precipitation data and its interpolation to have a catchment average, as well as gathering streamflow gauging records for the same period and converting them to the appropriate units to calculate the desired coefficient. Regarding the baseflow index, the work would involve collecting hydrographs of several streamflow peaks to then apply hydrograph separation techniques [@custodio_hidrologisubterranea_1983; @gustard_manual_2008], thus being able to calculate the groundwater contribution for the period of interest. This sometimes has been done manually [e.g., @molina-navarro_hydrological_2016], while other authors have used automatic computerized techniques [@kang_baseflow_2022]. Among those, Arnold and Allen [-@arnold_automated_1999] developed a software that incorporates a digital filter for baseflow estimation that have been used in numerous modelling applications [e.g., @meaurio_evaluation_2015; @senent-aparicio_introducing_2021]. This tool analyses a daily streamflow record and provides three different estimates of baseflow contribution that vary noticeably. Koffler et al [-@koffler_lfstat_2022] have developed an R package which estimates the baseflow index through a linear interpolation of minima turning points in a streamflow time series, which could also lead to uncertainties depending on the hydrological regime [@gustard_manual_2008]. A more reliable hydrograph separation, however, would involve an active user involvement to guide the separation process.
+
+Thus, there is need of developing tools to derive realistic values of these two soft data variables for one or several catchments, for a certain period, and using the same working environment. This would ultimately encourage modellers to subsequently perform soft calibration procedures, thus advancing towards a better hydrological modelling. Besides, in those basins that present heterogenous hydrological properties, deriving these variables for several sub-catchments could allow carrying out zonal calibrations, which might result in more robust models [e.g., @sanchez-gomez_optimization_2022].  
+
+The main goal of this work is to present a reproducible methodology developed in R for collecting two soft data variables at catchment scale, namely the runoff coefficient and the baseflow index, for a certain area and time period, using precipitation and streamflow data, and also requiring expert knowledge in the baseflow index case to guarantee obtaining realistic values. To prove the applicability of the methodology, it has been applied to the Upper Tagus River Basin (UTRB) in Spain. The UTRB is geologically heterogeneous and modelling its complex hydrological system can greatly benefit from spatially distributed soft information on the dominant hydrological processes. Therefore, the case study also demonstrates how the methodology allows obtaining different values of these two variables for several geological regions within the basin, which might ultimately serve to guide a subsequent and reliable soft calibration procedure. 
+
+
+### 2. Methodology
+
+#### 2.1. General workflow
+
+The proposed methodology requires the following input datasets: i) a file with daily streamflow data from the selected gauging stations with an identifier; ii) a directory with gridded meteorological data (precipitation and temperature) and a vector layer (point type) with the location and identifier of the grid points (temperature data is not required to calculate the selected indices, but these two variables usually come together and it is worthy to include it in the code flow since temperature directly affects evapotranspiration and therefore the runoff coefficient, so it might be useful for analysis and discussion of results); and iii) a single vector layer (polygon type) with the delineation of all the subbasins to be analysed (i.e. the drainage areas of the streamflow stations selected, that should be prepared beforehand).
+
+Once the input datasets are ready, the first step consist in create two csv files that will be used as inputs in posterior processes. The first file, created from the basins vector file, contains information about the subbasins. The second file, define the weather grid points that should be used to calculate the weather variables in each subbasin. Once the input data is created and read, the R code allows estimating the runoff and baseflow coefficients, being the user guided both by the comments provided in the code and by the recommendations given in this manuscript, particularly towards the baseflow index calculation. Two more files which contains the results of the baseflow index calculation are created. Also, some output files which summarize the more relevant information are automatically created with the code, examples can be found in Appendix XXX. @fig-worflow shows the general workflow of the proposed methodology, and the different steps are fully described in the next subsections.
+
+
+![Methodology workflow chart. Dotted lines represent processes not included in the code.](Figures/F1_workflow.png){#fig-worflow}
+The usefulness of this methodology has been tested in the Upper Tagus River Basin (UTRB), a catchment highly relevant for water management in Spain that is described below. The data sources used in this manuscript allow to directly reproduce the methodology proposed anywhere in Spain, but as long as the data requirements abovementioned are available, it can also be applied anywhere in the world with minor code adaptations to read different input data formats.
+
+
+#### 2.2. Study area
+
+The Tagus River (@fig-location) is the longest river in the Iberian Peninsula, and with approximately 11 million inhabitants its basin is the most populated. Water resources in this basin are scarce considering the high water demand for irrigation and human consumption. It is expected that climate change will exacerbate this situation [@garcia-ruiz_jose_2011, @sanchez-gomez_streamflow_2023, @bednar-friedl_europe_2022]. In addition, a water transfer system diverts water from the headwaters of the Tagus River to the southeast of Spain to satisfy irrigation and human consumption demands. Thus, realistic hydrological modelling of this basin is of utmost importance in order to make reliable future assessments of, for example, climate change impacts.
+
+The study area for this work is the upper part of the Tagus River basin (UTRB), which has a size of 33,880 km², i.e., approximately 40% of the entire Tagus River basin (@fig-location). It is delimited by three mountain ranges: the Central System in the north, the Iberian System in the east, and the Toledo Mountains in the south. The altitude of the UTRB ranges from 2,400 m.a.s.l. in the Central System mountain range to 360 m.a.s.l. at its outlet in Talavera de la Reina (Toledo). The study area is characterized by a continental Mediterranean climate, which varies depending on factors such as altitude, proximity to the ocean and latitude. Chazarra et al. [-@chazarra_bernabe_mapas_2018] classified it as temperate (C) and dry (B) following the Köppen-Geiger climate classification for the period 1980 to 2010. The mean precipitation for that period was 550 mm, with values higher than 1.400 mm in the Central System and lower than 400 mm in the driest areas of the southern part of the UTRB. The mean temperature is 12ºC, ranging from 8ºC to 10ºC in the Central System to 13ºC in the east and 17ºC in the west [@chazarra_bernabe_mapas_2018]. The average precipitation and water yield of the basin decreased over the last decades, which can be attributed to the impacts of climate change [@garcia_serie_2017].
+
+Natural vegetation and agricultural lands are the main land covers in the UTRB, occupying around 48% and 47% of the total area, respectively. The dominant crops are cereals, followed by other crops such as sunflower or legumes. Urban land covers around 3% of the total area.
+
+Due to mountain systems with different bedrocks, the UTRB is characterized by a heterogeneous geology and the dominant hydrological processes vary within the different geological zones [@custodio_hidrologisubterranea_1983; @sanchez-gomez_optimization_2022]. Direct runoff is expected to be predominant in the Central System and in the Toledo mountains, which are composed of igneous and metamorphic rocks with low permeability. In contrast, the carbonate rocks of the Iberian System are important aquifers and baseflow is expected to be more relevant there. The sedimentary deposits of the basin also have varying hydrological properties, including Tertiary rocks and Quaternary alluvial sediments with high permeability that are relevant aquifers, and detrital and evaporitic materials with low permeability.
+
+![Study area location, lithology, permeability and selected basins (see section 2.3). Lithology and permeability information taken from IGME (del Pozo, 2009).](Figures/Studied_basinss.png){#fig-location}
+
+
+#### 2.3. Input data preparation
+
+Daily precipitation and temperature data for the UTRB were obtained from the Spanish Meteorological Agency (AEMET) grid [5 km resolution, @garcia_serie_2017], which includes data for all of Spain from 1951 to 2019. This database was transformed into SWAT readable format by Senent-Aparicio et al. [-@senent-aparicio_impacts_2021], being the one used in this work since it is much easier to handle than the original AEMET format. A point vector layer containing the location of the centroids of the weather grid cells was created and each point was assigned a unique identifier. 
+
+
+Streamflow data was collected from the CEDEX streamflow gauging stations annual report [@cedex_anuario_2021], which contains daily records of all gauging stations in Spain.
+
+The datasets were visually inspected and statistically analysed to ensure their reliability. In the case of streamflow data, verification of data availability for the entire working period is recommended and was performed for the UTRB (Appendix XXX), since missing data can lead to incorrect results.
+
+The last required input is a vector file containing the polygons of the subbasins to be analysed. This step was intentionally taken out of the R workflow, since they might already be delineated, or the user might prefer to delineate them using a GIS software to guarantee a reliable delineation (often the delineation steps need to be visually inspected at various zoom levels and/or by overlaying them with aerial imagery or other spatial data).
+
+To obtain reliable values of the indices, the selection of subbasins has to be based on two criteria: the availability of streamflow records for the desired working period, and having a mostly undisturbed regime, without any major reservoirs in the catchment or significant water withdrawals. An additional third criterion was used in the study case presented in this manuscript: the geological region in which the catchment is located. Grouping the subbasins in regions (geological or of any other desired type) might be useful for deriving average indices values per region for a subsequent soft calibration process. Finally, 19 subbasins were identified as suitable for the calculation of runoff and baseflow coefficients for the different geologic zones [@fig-location].
+
+For the study case presented, four different geological regions or substrates were defined according to the lithology and permeability of the UTRB [@del_pozo_gomez_mapa_2009]. The defined regions are: i) an impervious region (IMP), with low and very low permeability metamorphic and igneous rocks; ii) a carbonate region (CRB), composed by carbonate rocks with high and medium permeability mainly; iii) a high and medium permeability detrital region (DTH), conformed by high and medium permeability Tertiary sedimentary rocks and Quaternary sediments; and iv) a low permeability detrital region (DTL), conformed by detrital and evaporitic materials with low permeability (i.e., marls, gypsum).
+
+As most of the subbasins had more than one type of substrates within, the proportion of each material in each subbasin was calculated, and can be found in Appendix XXX. Subbasins where at least 70% of the area was composed of one substrate were considered representative for the IMP, CRB and DTH regions. However, for the DTL substrates, they were not dominant in any gauged subbasin, and therefore subbasins with at least 25% of this substrate were considered representative. Finallt, three to four representative subbasins were selected for each geological zone (@fig-location, Appendix XXX), and six basins with a mixed lithology were chosen additionally, in order to characterize the hydrologic behaviour in heterogeneous regions (MIX).
+
+The working period selected to obtain the runoff and baseflow coefficient was 2010-2018. This is because the main goal of this manuscript is to present a methodology to obtain these two variables for a certain modelling period so they can afterwards guide a subsequent soft calibration process. This period seemed convenient since it contains the latest available data and enough years for a future model evaluation in which the observed indices can be compared with simulated ones. Besides, this period is long enough to cover a large interannual climate variability, with dry, wet, and average years, which is desirable for future modelling purposes so the calculation of runoff and baseflow coefficients takes into account different climatic conditions. Some of the subbasins selected for the study case (subbasins 2, 6 and 14) did not have streamflow records for the entire time period, but were considered important for ensuring that all of the geological regions in the UTRB were adequately represented. In these cases, only the years with complete data were used for calculating the runoff and baseflow coefficients. More information about the selected subbasins and their available streamflow data can be found in Appendix XXX.
+
+#### 2.4. Creating workflow input files
+
+The first step performed within the proposed R workflow creates two files that identify the relevant input data for the individual subbasins of interest.
+
+After loading the basins vector file, the *sf* and *dplyr* packages [@pebesma_simple_2018; @wickham_tidyverse_2022] are used to calculate the area of each subbasins, and a field with the identifier of the gauging station for each subbasin have to be introduced, finally creating the file *1_basins_file.csv*. Next, all the weather points located within a subbasin or a 1 km buffer outside its boundary are assigned to the respective subbasin using the weather grid vector file and the subbasin shapefile. Buffer extension is defined by the user, and depends on weather data resolution. A csv file containing the identifier of each grid point located in the subbasins and which subbasin it belongs to is then created and saved as *2_ids_stations_file.csv*. Note that in the weather datasets used in the case study presented, the identifiers and location of the precipitation and temperature grid points are the same, so only one file is needed for both variables. If that is not the case, two different files have to be created (following the same methodology) and used for the calculation of precipitation and temperature (see section 2.5). An example of the code used to create both files can be found in Appendix XXX. The two generated csv files are the input files required for the calculation of the runoff and baseflow coefficients (see sections 2.5 and 2.6).
+
+Since the processes related to the baseflow index estimation are not automatic, two additional files to store the outputs of this processes are automatically created. These files are *3_alpha_estimation.csv*, which contains the estimated alpha values and other data generated during this working step, and *4_groundwater_results.csv*, where the used values of the filter parameters and the baseflow index estimations are saved. These files can be found in the accompanying GitHub repository (see Data availability section).
+
+
+#### 2.5. Runoff coefficient calculation
+
+For the calculation of the runoff coefficient, input precipitation and streamflow datasets (section 2.3) and the input csv files created in the previous working step (section 2.4) are used.
+
+The code (Appendix XXX) automatically aggregate precipitation and runoff data and calculate the runoff coefficient in average and for each year. The observed streamflow data is aggregated from daily streamflow records (m³/s) to annual contribution values (mm/year) using the subbasin area. Daily precipitation data (mm) is aggregated to calculate annual precipitation (mm/year) for each grid point and then the average precipitation for each subbasin. In addition, the average maximum, minimum and mean temperature is calculated. Then, the average runoff coefficient for the selected period in each basin is calculated, allowing also to extract annual values to analyse the interannual variation. If the area of study contains several regions, like the geological regions of the study case presented, the code allows the user to calculate the average runoff coefficient per region too (Appendix XXX).
+
+
+#### 2.6. Baseflow contribution estimation
+
+The methodology proposed calculates the baseflow contribution for the selected subbasins using a two-parameter baseflow filter function following the equations in Eckhardt [@-eckhardt_how_2005], which are in turn based on the Lyne and Hollick [-@lyne_stochastic_1979] algorithm and subsequent modifications by Chapman [-@chapman_comparison_1999-1] and Chapman and Maxwell [-@chapman_baseflow_1996]. This algorithm has already been used in other automated methods for estimating baseflow [@arnold_automated_1999], but in this manuscript, rather than applying a fully automatic baseflow separation, we provide recommendations for a semi-automatic application guided by expert knowledge, and thus ensuring a highly realistic calculation of baseflow contribution for the different subbasins to be analysed. 
+
+First, the theoretical basis for the baseflow separation and calculation is explained, since some clarification is needed to understand how to obtain the required parameters for the baseflow filter application. @eq-bf_filter calculates the baseflow (same units than the observed data) for a day (b~k~) based on the two filter parameters (alpha and BFImax) and the streamflow of this day (y~k~).
+
+$$ b_{k} = \frac{(1 - BFImax) * alpha * b_{k-1} + (1 - alpha) * BFImax * y_{k}} { 1 - alpha * BFImax} $$ {#eq-bf_filter}
+
+*BFImax* is the maximum value of baseflow contribution expected for one day (fraction), and *alpha* is defined by Eckhardt [@-eckhardt_how_2005] as a recession constant in the form [notice that in [@eckhardt_how_2005] manuscript this parameter is defined as ‘*a*’, but in the R function is computed as ‘*alpha*’, nomenclature that we decided to keep in the manuscript):
+
+$$ b_{k} = alpha * b_{k-1} $$ {#eq-alpha_rec_constant}
+
+This might lead to confusion, since the recession constant in hydrogeological literature is usually presented as *α*, and defined as [@maillet_essais_1905; @zhu_estimation_2010; @eq-gw_recession]: 
+
+$$  Q_{t} = Q_{0} * e^{-α * t} $$ {#eq-gw_recession}
+
+where Q~0~ is the streamflow at the beginning of the recession and Q~t~ is the streamflow on day t. However, @eq-gw_recession can be converted to a linear equation ($y = mx + b$) using logarithms, where the intercept is the streamflow at the beginning of the recession and the slope is the classisc groundwater recession constant (α):
+
+$$ ln(Q_{t}) = ln(Q_{0})-α * t$$ {#eq-gw_linear_recession}
+
+Considering @eq-alpha_rec_constant and @eq-gw_recession, when $t = 1$, and making the assumption that during the recession all the flow is baseflow, it can be inferred that:
+
+$$alpha = e^{-α}$$ {#eq-alpha_conversion}
+
+The proposed procedure to estimate the groundwater contribution consist in the following steps: i) estimating the value of *alpha*, ii) apply the baseflow filter, changing the values of *alpha* and *BFImax* until a realistic baseflow separation is achieved, and iii) calculate the groundwater contribution.
+
+For the estimation of alpha as incorporated in the filter, the groundwater recession constant can be calculated in its classic way (*α*), using the function attributed to Maillet [-@maillet_essais_1905; @eq-gw_recession]. As explained above, if this equation is converted to a linear one using logarithms (@eq-gw_linear_recession), *α* becomes the slope of this linear equation and can be estimated. To reduce uncertainty, we recommend to identify the groundwater recession curve for three representative streamflow peaks in each subbasin. These peaks can be selected considering aspects such as their magnitude, duration and shape (@fig-recession_curve). Then, the linear regression of the natural logarithm of the streamflow on the recession time (@fig-recession_curve) is performed using the *stats::lm()* function, obtaining a linear equation similar to @eq-gw_linear_recession. The initial point of the recession curve has to be selected when the direct runoff ceases and the baseflow takes maximum values. Despite the ambiguity in determining the beginning and the end of the recession curve [@blume_rainfallrunoff_2007], representing the streamflow with a semi logarithmic axis can help to determine these points, since the recession curve conforms approximately to a straight line (@fig-recession_curve). A minimum of 10 days of recession curve, which ensures that the linearity of the equation is a good approximation [-@chapman_comparison_1999-1], and a minimum determination coefficient value of 0.8 are recommended as criteria for calculating the groundwater recession constant. Even though a recession curve without any precipitation is desirable for adjusting the linear regression, it is not always possible to comply with this condition. A longer recession curve might be preferred despite including some precipitation events, since the recession curve tends to be steeper at the beginning of the recession (due to soil water recession). Once the slope of the linear regression equation (*α*) was calculated, the recession constant as included in the baseflow filter (*alpha*) can be calculated following @eq-alpha_conversion, thus having three values of this parameter (from the recession of three hydrograph peaks) that can be used as reference to apply the baseflow filter. @fig-recession_curve resumes the process to estimate the groundwater recession constant.
+
+![Peaks selection, groundwater recession curve identification and linear adjustment performed for subbasin 5 of the study case presented.](Figures/peaks_selection_adjustment_b5.png){#fig-recession_curve}
+
+Once an estimated value of *alpha* has been obtained the baseflow filter can be applied. Different values of *alpha* and *BFImax* should be tried until reaching a realistic baseflow separation. In order to know how these parameters work functioning, their effects on the baseflow estimation has been assessed (@fig-parameters_effect). Both parameters are noticeably sensitive to the baseflow component separation. *BFImax* directly affects the amount of baseflow that the filter estimates, as it is the maximum baseflow ratio expected (@fig-parameters_effect, left). *alpha* controls the response of baseflow to episodes of flood or recession. Higher values of *alpha* result in a lower sensitivity of baseflow to those changes (smoother fluctuations), which in turn also has an impact on  the total amount of baseflow. Both parameters are closely related to the lithology of a basin: basins with aquifer systems will have a higher contribution of groundwater to streamflow than impervious basins, and therefore should have higher *BFImax* values. Permeable basins with higher aquifer-river connectivity (i.e., sandy aquifers) will be more sensitive to recharge-discharge episodes than basins with less permeable substrates (e.g., clayey aquifers) and therefore the *alpha* value, which is related to the transmissivity, will be lower. Accordingly, the properties of a basin must be taken into account before setting the parameters of the baseflow filter, as for example reported in Kang et al. [-@kang_baseflow_2022].
+
+
+![Parameters effect on the baseflow filter calculation.](Figures/parameters_effect_plot.png){#fig-parameters_effect}
+
+The baseflow separation is computed for all the observed data period, but it is evaluated individually for each peak defined during the *alpha* estimation. A realistic separation should be achieved for the three peaks, ensuring that the suitability of the selected parameters. Despite it would vary according to the basins characteristics, a realistic baseflow separation may be similar to the one presented in @fig-bfsep_example, where baseflow fraction regarding total streamflow is maximum during dry periods and minimum when there are precipitation events. Precipitaiton is plotted above the baseflow separation, which help to perform and evaluate it.
+
+![Baseflow separation example performed for the peak 1 of the subbasin 5.](Figures/subb_5_bfsep.png){#fig-bfsep_example}
+
+Once a realistic baseflow separation has been achieved, the contribution of groundwater to the streamflow (Bf~c~) for the evaluated period can be calculated with @eq-bf_contribution once, where n is the number of days for which the filter is applied, bf~k~ is the baseflow contribution for the day k and rn~k~ is the runoff contribution for the day k (units equal to the observed data).
+
+$$ Bf_c =  \frac {\sum_{1}^{n} bf_k}  {\sum_{1}^{n} (bf_k + rn_k)}   $$ {#eq-bf_contribution}
+
+
+All the information about the baseflow separation process is saved into two files. Regarding the *alpha* estimation, the peaks definition, the recession curve definition and duration, the determination coefficient and the groundwater recession constant and *alpha* values are saved in the *3_alpha_estimation.csv* file, being some used in the baseflow separation process. In the *4_groundwater_results.csv* file, the values of the parameters used in the filter and the obtained baseflow contribution is saved.
+
+
+### 3. Results and discussion
+
+#### 3.1. Study case application
+
+##### 3.1.1. Runoff coefficients
+
+Runoff coefficients were calculated for 19 subbasins of the UTRB for the period 2010-2018 (with some exceptions for subbasins 2, 6 and 14), and both average and annual values were evaluated considering the precipitation, temperature, and geological region. Appendix XXX contains the mean, maximum and minimum runoff coefficient values obtained for each subbasin, and the mean precipitation and temperature for the time series. Results for each subbasin can also be found in the GitHub repository.
+
+The variability obtained in the runoff coefficient values highlight the importance of obtaining and analysing soft data before calibrating a hydrological model. The values for the mean runoff coefficient for the different subbasins of the UTRB ranged from 47% in subbasin 2 to 2% in subbasin 13. Within the subbasins, the runoff coefficient also varies greatly from year to year (e.g., the maximum value for subbasin 10 is 15 times higher than the minimum value, Appendix XXX), being thus necessary to evaluate a period representative of the weather conditions. As expected, the runoff coefficient is related to the mean precipitation (less precipitation led to lower values of the runoff coefficient), the mean temperature (higher temperatures result in higher evapotranspiration rates and lower runoff coefficients), and also to the geological region (Appendix XXX). However, in some years and subbasins the runoff coefficient appears to also be influenced by other factors. A further comprehensive analysis of the yearly runoff coefficient variation taking into account different variables (precipitation, temperature, slope, surface, main land cover, lithology, etc.) could be performed, but was beyond the scope of this work. @tbl-reg_runoff_rates presents the average runoff coefficient per geological region calculated from the full results (Appendix XXX).
+
+```{r Runoff_rate_regions}
+#| eval: true
+#| echo: false
+#| output: true
+#| label: tbl-reg_runoff_rates
+#| tbl-cap: Average, minimum and maximum runoff coefficients for the geological regions
+
+   # Table with the obtained values for each basin
+   tib_basin_runoff_rates <-  basin_runoff_rates%>% data.frame(.) %>% tibble(.) 
+   tib_basin_runoff_rates <- tib_basin_runoff_rates%>% left_join(., basins_file[,c(1:2,5)], "Basin_ID") %>% 
+   .[,c("region", "Basin_ID", "Basin", "Mean_pcp", "Mean_runoff", 
+   "Runoff_rate", "Runoff_rate_sd", "Max_runoff_rate", "min_runoff_rate")] 
+   # Table with the obtained values for regions
+   tib_region_runoff_rates <- tib_basin_runoff_rates %>% group_by(region) %>% summarise(Mean_pcp = mean(Mean_pcp),
+                              Mean_runoff = mean(Mean_runoff), Mean_runoffrt = mean(Runoff_rate),
+                              Runoffrt_sd = mean(Runoff_rate_sd)) 
+
+ runoff_tmp_annual_list <- list() #For each basin, a list for the annual values
+      for(i in 1:length(tmp_bas_list)){
+        tmp <- tibble(tmp_bas_list[[i]])
+        runoff <- tibble(anual_runoff_rate[[i]])
+        tibb_merge <- left_join(tmp, runoff, "Year") %>% left_join(., basins_file[,c(1,2,5)], "Basin_ID") %>% .[,c(10,5,9,1,4,2,3,6,8)]
+        colnames(tibb_merge) <- c("Region", "Basin_ID", "Basin", "Year", "Mean Temperature", "Min Temperature", "Max Temperature", "Mean Precipitation", "Runoff coefficient")
+        runoff_tmp_annual_list[[i]] <- tibb_merge
+      }
+      
+      runoff_rate_tibble <- tib_basin_runoff_rates %>% left_join(., temperature_tibb, "Basin_ID") %>% .[,c(1:3, 12,4, 6, 9, 8)] #For each basin, a summary table for all the period
+      runoff_rate_tibble <- runoff_rate_tibble %>% mutate(Mean_pcp = round(Mean_pcp,0), means = round(means, 2), Runoff_rate = round(Runoff_rate,2),
+                                                         min_runoff_rate = round(min_runoff_rate,2), Max_runoff_rate = round(Max_runoff_rate,2))
+      colnames(runoff_rate_tibble) <- c("Region", "Basin_ID", "Basin", "Mean Temperature", "Mean Precipitation", "Mean Runoff coefficient", "Min Runoff coefficient", "Max Runoff coefficient")
+      
+runoff_reg_tab <- runoff_rate_tibble %>% mutate(Region = factor(Region, levels = c("IMP", "CRB", "DTH", "DTL", "MIX"))) %>% group_by(Region) %>% summarise(`Mean Temperature` = round(mean(`Mean Temperature`), 2), `Mean Precipitation` = round(mean(`Mean Precipitation`),0), `Mean Runoff ratte` = round(mean(`Mean Runoff coefficient`), 3), `Min Runoff coefficient` = round(min(`Mean Runoff coefficient`), 3), `Max Runoff coefficient` = round(max(`Mean Runoff coefficient`), 3), `Mean Runoff coefficient` = `Mean Runoff ratte`) %>% .[,c(1,2,3,7,5,6)] 
+
+ apa(runoff_reg_tab)%>% tab_footnote("")
+
+```
+
+The influence of lithology becomes evident when aggregating to the region scale. The runoff coefficients are highest in the IMP and CRB regions, where not only precipitation and temperature are more favourable for generating runoff, but also the lithology and the mountainous topography. It should be noted that the subbasins selected in the CRB region are closely located (@fig-location) and thus have a similar climate. Therefore, the runoff coefficient varies less than within the IMP region, where subbasin 3 is located in a more arid and warmer region than subbasins 1 and 2. The DTH and DTL regions are flatter and warmer than the CRB region, and evapotranspiration is favored under these conditions [@custodio_hidrologisubterranea_1983], resulting in runoff coefficients of less than 10%. Even though some areas of the DTL region are composed of medium permeability carbonate and detrital materials (Appendix XXX), the runoff coefficient in this region is lower than in the DTH region, indicating a high influence of the low permeability materials, which in combination with a flat topography, low precipitation and warmer temperatures, lead to very high evapotranspiration. Due to the flat topography, it would be possible that a small amount of the recharged water is released to streams downstream of the gauging stations, but it is not expected to be a significant amount.
+
+As expected, the subbasins used to characterize regions with a mixed lithology (MIX) yielded the widest range of runoff coefficient values. In line with the results discussed above, mixed lithology subbasins where igneous, metamorphic, or carbonated materials dominate had higher runoff coefficient values, while lower values were obtained for the mixed subbasins where detrital materials with low permeability are present (e.g., subbasins 17 or 18, Appendix XXX and XXX).
+
+#### 3.1.2. Groundwater contribution analysis
+
+@tbl-reg_alphas summarizes the results of the process for estimating the *alpha* filter parameter in the different geological regions, which is the first step required for the subsequent application of the baseflow filter. alpha estimation process, i.e., the average duration of the recession curve, the average determination coefficient, the average α and the average alpha value and standard deviation, for the geological regions. Results for the individual subbasins can be found in Appendix XXX.
+
+
+@tbl-reg_alphas summarizes the results of the process for estimating the *alpha* filter parameter in the different geological regions, which is the first step required for the subsequent application of the baseflow filter. This includes the average duration of the recession curve, the average coefficient of determination, the average *α* and the average *alpha* value and standard deviation. Results for the individual subbasins can be found in Appendix XXX.
+
+
+```{r alpha_values}
+#| eval: true
+#| echo: false
+#| output: true
+#| warning: false
+#| label: tbl-reg_alphas
+#| tbl-cap: Results at region scale of the groundwater recession curves linear adjustment
+
+# File with alpha estimation data
+alphas_tibble <- read.csv("Used_files/Created_csv/3_alpha_estimation.csv") 
+
+alphas_tibble <- alphas_tibble %>% 
+mutate(region = factor(region, levels = c("IMP", "CRB", "DTH", "DTL", "MIX")))
+
+tab_bas <- alphas_tibble %>% 
+  group_by(Basin, Basin_ID, region) %>% 
+  summarise(recess_days = round(mean(recess_days  ),0), det_coef = round(mean(det_coef), 3), 
+            gw_rec_const = round(mean(gw_rec_const ),3), mean_alpha_value = round(mean(alpha_value ), 3), alpha_sd = round(sd(alpha_value ), 3)) %>% 
+  arrange(., Basin_ID) 
+   
+tab_reg <- tab_bas %>% group_by(region) %>%  
+      summarise(recess_days = round(mean(recess_days),0), dcoef_reg = round(mean(det_coef), 3), gw_rec_const = round(mean(gw_rec_const), 3),
+      alpha_reg = round(mean(mean_alpha_value), 3), alpha_sd = round(sd(mean_alpha_value), 3))
+
+colnames(tab_reg) <- c("Region", "Average recession curve time (days)",  "Mean coefficient of determination ", "Mean groundwater recession constant (α)", "Mean alpha value", "Alpha standard deviation")
+  
+apa(tab_reg)%>% tab_footnote("")
+  
+```
+
+The lithology has a noticeable influence on the recession curves seen in the hydrographs fot the different geological regions (Appendix XXX). The recession curve duration is directly proportional to the aquifer properties of the subbasin. Subbasins with a carbonate lithology have an average recession curve duration that is three times longer than the recession curve duration of the IMP or DTH regions, which can also be observed when comparing the hydrographs (Appendix XXX). Since some of the subbasins in the DTL region include areas with a carbonate lithology, the duration of the recession curve is also longer (due to the CRB carbonate lithology areas). In the CRB subbasins, the end point of the recession curves was chosen when a precipitation event caused a relevant increase in the streamflow, while in the IMP or DTL region this point was generally chosen when the streamflow ceased. Due to the higher transmissivity of the DTH aquifers and its smaller storage capacity regarding the CRB subbasins, groundwater flow is less important in these subbasins, and they are characterized by a smaller and faster recession process that does not always maintain streamflow throughout the entire dry season. In the IMP region, groundwater is not expected to be as relevant as in the other substrates, and accordingly the expected recession time is shorter. However, other hydrological processes (snowmelt, precipitation frequency) in subbasins 1 and 2 of this region might significantly impact the recession curve (Appendix XXX).
+
+The average values for the coefficient of determination of the recession curves selected are in general higher than 0.9, which indicates that this selection was appropriate. The subbasins with highest determination coefficients are characterized by more homogeneous recession processes, and the recession curve selection was easier (e.g., in the CRB or IMP regions).
+
+The obtained *alpha* values are related to the recession curve duration and magnitude. They generally matched our expectations: the CRB region yielded the highest *alpha* (and therefore the longest recession period), while the lowest value was obtained for the IMP region. As discussed above, some other processes occurring in the IMP region might be extending the recession period, and therefore the obtained alpha values are similar to the DTH values. The standard deviation of *alpha* (@alpha_values) reveals the variability in the recession of the subbasins within a region. It was the largest in the heterogenous MIX and DTL regions, and smallest in the CRB region, which indicates that the recession process is similar in its subbasins. 
+
+Then, a range of potential alpha values to use in the filter was estimated since this parameter was estimated for three hydrograph recession curves, as explained in section 2.6. Values within this range were used for running the baseflow filter in order to obtain a realistic separation of the hydrograph components. These ranges were often expanded since both *alpha* and *BFImax* are linked (@alpha_values) and the ultimate goal is to achieve the most realistic hydrograph separation possible. Also, because under real circumstances, the recession curve (and consequently the *alpha* value) might be affected by other processes like snowmelt, precipitation events during the recession period, or withdrawals or releases related to human activities
+
+The values of *BFImax* were initially estimated based on the abovementioned recommended values in Eckhardt [@-eckhardt_how_2005], together with the knowledge the research team on the study area. However, these recommended values led in some cases to an overestimation of baseflow (although they could be appropriate for other regions), and were then tuned by using the filter towards achieving a realistic hydrograph separation by visual inspection following the recommendations in the literature [e.g.; @custodio_hidrologisubterranea_1983]. The final selected values for *alpha* (@tbl-reg_gw_results) slightly differed in some cases from the estimated ones (@alpha_values), as a realistic streamflow components separation for the three evaluated peaks was preferred than using the exact estimated values. Then, the baseflow index was calculated for the entire period with @eq-bf_contribution.
+
+@tbl-reg_gw_results shows the average values of the parameters used for the different regions and the value of the baseflow index estimated with the baseflow filter. Appendix XXX contains this information for each of the subbasins.
+
+```{r Groundwater_regions}
+#| eval: true
+#| echo: false
+#| output: true
+#| label: tbl-reg_gw_results
+#| tbl-cap: Average parameter values used in the baseflow filter and groundwater indexes estimated at region scale.
+
+# File with baseflow index estimation data
+baseflow_dat <- read.csv("Used_files/Created_csv/4_groundwater_results.csv")
+
+ baseflow_dat %>% .[,c(2,1,3,4,5,6)]%>% 
+  mutate(Region = factor(region, levels = c("IMP", "CRB", "DTH", "DTL", "MIX"))) %>%
+   group_by(Region) %>% summarise('Mean alpha used' = round(mean(alpha), 3), 'Mean BFImax used' = round(mean(bfi_max_used), 2),'Estimated baseflow index' = round(mean(BF_Rate), 2), 'Baseflow index standard deviation' = round(sd(BF_Rate), 2)) %>% apa(.) %>% tab_footnote("Average parameter values used in the baseflow filter and groundwater indexes estimated at region scale.")
+
+```
+
+Subbasins located in geological regions with low permeability were expected to have a lower baseflow index, while those located in regions with relevant aquifers were expected to have higher. A baseflow index of 26% was estimated for the IMP region. This value might be considered high for impervious basins, but based on the knowledge about the subbasins and the assessment performed, it is considered reasonable. Some indicators, such as the presence of flow during dry periods or phreatophyte vegetation suggest a relevant groundwater contribution, and these indicators have been observed in some of the subbasins characterized as impervious in this work [@martin-loeches_hydrogeochemistry_2020].
+
+As expected, the CRB region had the highest baseflow index: it is dominated by a carbonate geology with karst processes and its climate is colder and more humid. Around 50% of the streamflow was estimated as groundwater contribution, which is in agreement with previous studies [@sanchez-gomez_optimization_2022] and considered to be a realistic value taking into account the properties of the region. The baseflow index is higher in some of the studied subbasins, e.g., subbasin 6, where a groundwater contribution of 55% percent was estimated (Appendix XXX).
+
+Despite their different permeability, the obtained values of groundwater contribution were similar in the two detrital regions. As mentioned in section 2.3, this could be because the subbasins considered as representative of the DTL region are actually composed by mixed materials (with relevant areas of carbonate and detrital materials with medium and high permeability). With lower altitudes and a flatter landscape, precipitation is relatively low in the part of the UTRB where these two detrital regions are located. However, runoff coefficients obtained for DTL region are noticeably lower, pointing to a very high evapotranspiration in the low permeability areas (percolation is reduced and more water is therefore available for evapotranspiration). In contrast, in the permeable areas of the DTL subbasins, a larger fraction of water infiltrates, recharges the groundwater and becomes streamflow. In consequence, groundwater contribution in the DTL region is higher than it could be expected considering its lithology, as the permeable areas contribute more to the streamflow than the low permeability ones. The hydrographs of the subbasins within the DTL region reveal this behaviour, since baseflow is maintained throughout the year (Appendix XXX).
+
+In the subbasins located in mixed lithology regions, the average baseflow index obtained is 37%. Four of the subbasins representative of this region (subbasins 16 to 19, Appendix XXX) are mostly composed by carbonate materials from medium to high permeability (@fig-location), while only two of the subbasins have impervious igneous and metamorphic materials.
+
+The standard deviation of the estimated baseflow rate among subbasins located in the same geological region was highest in the MIX region (0.12), followed by DTL region (0.12), where more different subbasins are grouped, while its samller in CRB (0.07) and in IMP and DTH regions (0.04).
+
+Applying a baseflow filter such as the one used in this workflow require of some considerations that worth to be mentioned. As explained above, despite *alpha* values were estimated in the methodology, the used values differed in some cases, as a realistic baseflow separation was prioritized. An *alpha* value higher than 0.97, regardless the estimated one, is recommended to be used to obtain a realistic baseflow separation. The influence of factors such as snowmelt, precipitation events, reservoirs, or withdrawals or releases related to human activities, should be analysed and corrected if possible. regarding data reliability, when applying the filter, the amount of streamflow in one day affects the baseflow calculation in the following days. Therefore, if an anomalous value of streamflow is recorded (i.e., a very low -or zero- value in between higher values), we recommend to correct this value to achieve realistic estimates of baseflow. The data used for this work had only very few anomalous values that were corrected before applying the filter. Lastly, the time scale used to evaluate the separation of the hydrograph components can also have a significant impact on the baseflow index estimation. @fig-timescale_effect compares how a peak is represented when looking at it within an entire time series and when looking at it individually. Longer time series including several peaks might lead to a distorted visual perception of the baseflow separation that might make the user think that the groundwater contribution is larger than actually is. Thus, the proposed procedure of evaluating several peaks individually is strongly recommended.
+
+![Time scale effect on the visual perception of the baseflow separation performed with the filter.](Figures/bfi_filter_timescale_ed.png){#fig-timescale_effect}
+
+
+
+#### 3.2. . Contribution of the methodology presented to hydrological modelling
+
+The methodology presented in this manuscript provides an R language code workflow to estimate both the runoff coefficient and the baseflow index for one catchment or several catchments, indices that can be used in a subsequent soft calibration process to guarantee achieving realistic simulations [@chawanda_mass_2020, @pfannerstill_how_2017]. Besides, it has been tested in 19 subbasins of a Spanish catchment, revealing the variability in those indices that might exist within one same catchment, and the importance to consider that variability if accurate modelling wants to be achieved. 
+
+First, the methodology allows to automatically calculate the runoff coefficient for a number of subbasins if gridded precipitation data and streamflow records area available. This facilitates modellers work, since the runoff coefficient calculation can be tedious, involving data interpolation, aggregation and units’ conversion. The data sources used for the study case presented as an example allow to fully reproduce the methodology in Spain; however, with small code modifications, it can be applied to any other place with gridded precipitation data, which is often available [e.g.; @blankenau_evaluation_2020]
+
+
+Regarding the baseflow contribution to streamflow, it is true that several baseflow filters have been already developed by other authors [@arnold_automated_1999; @koffler_lfstat_2022]. These tools are fully automated, easy to apply, but this involves some simplifications that can lead to a separation of the hydrograph yielding a baseflow contribution that might not fully match with the real one. This could make modellers to guide a subsequent calibration procedure based on inaccurate values, particularly if they do not have a strong hydrological background and/or they do not have good knowledge of the study area modelled. With the methodology presented in this manuscript, we propose a semi-automatic, supervised application of a baseflow digital filter, with a previous step of hydrograph recession curves analysis to get a realistic value of the groundwater recession constant (a parameter needed by the filter) before its application. We provide guidance on how to address this workflow in R, the same working environment as for the runoff coefficient calculation, without the need of installing new software or converting the data. Despite the proposed methodology addresses the hydrograph separation after analysing three hydrograph peaks (and their respective recession curves), it still might not guarantee a fully accurate baseflow separation (e.g., baseflow underestimated towards the end of long low flows periods or slightly overestimated during peaks, @fig-bfsep_example) and for some cases a compromise is needed to deal with these inaccuracies. These limitations have also been reported by other authors [@kang_baseflow_2022] and should be kept in mind when applying digital filters. Besides, the theoretical description of the filter presented in the manuscript shed some light on the understanding of the equation governing those filters, particularly towards the different definitions of the groundwater recession constant used in the literature. Collaterally, the guided calculation of this constant provides values of this parameter that can be used in a subsequent hard calibration.
+
+Finally, the large differences between subbasins and geological regions obtained for the two soft indices analysed in the study case (@Runoff_rate_regions and @Groundwater_regions) reveal the need of taking into account the regional differences in these indices before addressing a hydrological model calibration if an accurate, realistic and robust model wants to be achieved. However, unfortunately, very often a same parameter set is used of an entire catchment, despite being heterogeneous [@efstratiadis_one_2010]. The use of the methodology proposed in this manuscript can aid to obtain values of these indices at a regional level, thus facilitating a zonal parameterization of a subsequent calibration procedure and contributing to a more realistic and reliable hydrological modelling. 
+
+
+
+### 4. Conclusions
+
+
+This work presents a reproducible methodology in an R working environment to collect data of two soft variables, namely the runoff coefficient and the baseflow index, in a basin or a group of basins.
+
+The methodology allows to automatically calculate basin-specific runoff coefficients (annual and average values) based on rainfall and streamflow data. The baseflow index is estimated through a supervised, semi-automatic application of a digital baseflow filter. The code includes a previous step to estimate one of the filter parameters (*alpha*) from the hydrograph recession curve, and the manuscript provides guidance to address it, thus ensuring a realistic and successful application of the filter to finally obtain a baseflow index value.
+
+To demonstrate the usefulness of this methodology, these two indices were collected in 19 subbasins of the UTRB (Spain), located in four different geological regions. Besides testing the methodology, the work resulted in new insights about the hydrological properties of the basin, revealing large differences in both indices within the subbasins analysed. This in turn proves the need of taking into account the regional differences in these indices before addressing a hydrological model calibration if a realistic model wants to be achieved.
+
+The datasets used in the case study provided allow to replicate the methodology in the entire Spanish territory, but with small code adjustments it can be applied to any other region with available streamflow and precipitation data (preferably gridded). Besides the code, all the data of the case study is available in the repository for readers to reproduce the work presented. This methodology, computed in R environment for both indices, might contribute to aid towards realistic studies in the hydrological modelling community, particularly in areas with large climatic or geological heterogeneity.
+
+
+### Data availability
+
+All the data and code used for this work is available in the following GitHub repository: https://github.com/alejandrosgz/Soft_data_collection_methodology.git.
+
+### Acknowledgements
+
+Alejandro Sánchez-Gómez received support from the University of Alcalá (UAH) PhD Fellowships Program. This study was also supported by the Spanish Ministry of Science and Innovation (TwinTagus Project, PID2021-128126OA-I00), the Department of Education, Culture and Sports of Castilla-La Mancha (IMPACT Project, SBPLY/21/180225/000092) and the Department of Economy, Business and Employment of Castilla-La Mancha (CEAGU, 2023/00029/001).
+
+Some of the used functions in R were written by other researchers. Concretely, in addition to the used packages (cited in References section), the baseflow filter function was written by Hendrik Rathjens, and the tables format function was taken from https://www.anthonyschmidt.co/post/2020-06-03-making-apa-tables-with-gt/.
+
+Authors want to thank AEMET for the gridded weather datasets and the Water Resources Management and Planning Research Group (particularly Dr. Javier Senent Aparicio) from the Catholic University of Murcia for adapting the weather datasets format and make it available (https://swat.tamu.edu/data/spain/). Authors also want to acknowledge Lupe, Germán, Antonio and Carlos (UAH Physics department), for their help understanding the mathematics behind the baseflow filter equations.
+
+### References
+
+::: {#refs}
+:::
+
+######## Appendix I: Subbasins data {.appendix}
+
+```{r}
+#| eval: true
+#| echo: false
+#| output: false
+
+  apa <- function(x, title = " ") {
+  gt(x) %>%
+    tab_options(
+      table.border.top.color = "white",
+      heading.title.font.size = px(16),
+      table.font.size = px(14),
+      column_labels.border.top.width = 3,
+      column_labels.border.top.color = "black",
+      column_labels.border.bottom.width = 3,
+      column_labels.border.bottom.color = "black",
+      table_body.border.bottom.color = "black",
+      table.border.bottom.color = "white",
+      table.width = pct(100),
+      table.background.color = "white"
+    ) %>%
+    cols_align(align="center") %>%
+    tab_style(
+      style = list(
+        cell_borders(
+          sides = c("top", "bottom"),
+          color = "white",
+          weight = px(0.005)
+        ),
+        cell_text(
+          align="center"
+        ),
+        cell_fill(color = "white", alpha = NULL)
+      ),
+      locations = cells_body(
+        columns = everything(),
+        rows = everything()
+      )
+    ) %>%
+    #title setup
+    tab_header(
+      title = html(title)  # html("<i>", title, "</i>")
+    ) %>%
+    opt_align_table_header(align = "left")
+}
+```
+
+```{r csv_file_basins}
+#| eval: true
+#| echo: false
+#| output: true
+# label: tbl-app_subbasins_data
+#| tbl-cap: Selected subbasins properties and data availability
+
+# File with gauging data
+gauging_data_tagus <- read.csv("Used_files/Data/Gauging_data/afliq.csv", sep = ";") %>% 
+  tibble(.,"cod" = indroea, "date" = fecha, "obs_flow" = caudal) %>% 
+  .[, c("cod", "date", "obs_flow")] %>% mutate(date = dmy(date))
+
+#Checking the available gauging data dates: 
+data_range <- gauging_data_tagus %>% filter(cod %in% cods) %>% mutate(gauging_code = cod) %>% 
+     group_by(gauging_code) %>% summarise(mindat=min(date), maxdat = max(date)) %>% 
+     left_join(., basins_file[,c(1:2,4)], by =  "gauging_code") %>% arrange(., Basin_ID) %>% 
+     mutate(`Streamflow data availability` = paste(year(mindat), year(maxdat), sep =  "-")) %>% 
+     .[,c(1,6)]
+
+#Checking if data is complete for the entire period (2010-2018)
+ini <-  as.Date("2010/01/01")
+end <-  as.Date("2018/12/31")
+ndys <- seq(ini, end, 1) %>% length(.)
+
+complete_data <- gauging_data_tagus %>% filter(cod %in% cods, year(date) %in% 2010:2018) %>%
+   mutate(gauging_code = cod) %>% left_join(., basins_file, "gauging_code") %>% 
+   group_by(gauging_code) %>% summarise( ndays = n()) %>% 
+   mutate('Complete data (2010-2018)' =  case_when(ndays == ndys ~ "Yes", 
+   ndays < ndys ~ paste("No, ", ndys-ndays, " days missing", sep = "")))
+  
+# Creating summary table
+read.csv("Used_files/Created_csv/1_basins_file.csv") %>% left_join(., data_range, "gauging_code") %>% 
+  left_join(., complete_data, "gauging_code") %>% mutate(`Area (sq. km)` = round(area/1e6), 
+  Region = region, `ID, subbasin and streamflow station code` = paste(Basin_ID, ", ", Basin, " (", gauging_code, ")", sep = "")) %>%
+  .[,c(11,10,9,6,8)] %>% apa(., "Selected subbasins properties and data availability")
+```
+
+```{r}
+#| eval: true
+#| echo: false
+#| output: true
+# label: tbl-subbasins_lithology
+#| tbl-cap: Selected subbasins lithology
+
+
+subb_lithology <- read.csv("Used_files/GIS/Shapefiles/Basins_lithology.csv")
+
+subb_lithology %>% mutate("ID and Subbasin" = paste(ï..id, ", ", Basin, sep = "")) %>% 
+  mutate("Total area (sq. km)" = Area) %>% .[, c(8, 9, 4:7)] %>% 
+  rename(., "IMP %" = "IMP", "CRB %" = "CRB", "DTH %" = "DTH", "DTL %" = "DTL") %>% apa(., "Subbasins total area and relative area of each geologic substrate (%)")
+
+
+
+```
+
+######## Appendix II: Runoff coefficients and baseflow indexes obtained for subbasins {.appendix}
+
+```{r Runoff_rate_basins}
+#| eval: true
+#| echo: false
+#| output: true
+# label: tbl-runoff_rates
+#| tbl-cap: Basins runoff coefficients. Average, minimum and maximum value for the entire period
+
+ runoff_tmp_annual_list <- list() #For each basin, a list for the annual values
+      for(i in 1:length(tmp_bas_list)){
+        tmp <- tibble(tmp_bas_list[[i]])
+        runoff <- tibble(anual_runoff_rate[[i]])
+        tibb_merge <- left_join(tmp, runoff, "Year") %>% left_join(., basins_file[,c(1,2,5)], "Basin_ID") %>% .[,c(10,5,9,1,4,2,3,6,8)]
+        colnames(tibb_merge) <- c("Region", "Basin_ID", "Basin", "Year", "Mean Temperature", "Min Temperature", "Max Temperature", "Mean Precipitation", "Runoff coefficient")
+        runoff_tmp_annual_list[[i]] <- tibb_merge
+      }
+      
+      runoff_rate_tibble <- tib_basin_runoff_rates %>% left_join(., temperature_tibb, "Basin_ID") %>% mutate("ID and Subbasin" = paste(Basin_ID, ", ", Basin, sep = "")) %>% 
+        .[,c(13, 1, 12,4, 6, 9, 8)] #For each basin, a summary table for all the period
+      runoff_rate_tibble <- runoff_rate_tibble %>% mutate(Mean_pcp = round(Mean_pcp,0), means = round(means, 2), Runoff_rate = round(Runoff_rate,2),
+                                                         min_runoff_rate = round(min_runoff_rate,2), Max_runoff_rate = round(Max_runoff_rate,2))
+      colnames(runoff_rate_tibble) <- c("ID and Subbasin", "Region", "Mean Temperature", "Mean Precipitation", "Mean Runoff coefficient", "Min Runoff coefficient", "Max Runoff coefficient")
+      
+      apa(runoff_rate_tibble, "Subbasins runoff coefficients. Average, minimum and maximum value for the entire period")%>% tab_footnote("")
+      
+```
+
+```{r Groundwater_basins}
+#| eval: true
+#| echo: false
+#| output: true
+
+gw_file <- read.csv("Used_files/Created_csv/4_groundwater_results.csv") %>% 
+   mutate("ID and Subbasin" = paste(Basin_ID, ", ", Basin, sep = "")) %>% .[,c(7,3,4,5,6)]
+
+colnames(gw_file) <- c("ID and Subbasin","Region","alpha used", "BFImax used", "Estimated baseflow index")
+ apa(gw_file, "Filter parameters values and estimated baseflow index for each basin")%>% tab_footnote("")
+
+```
+
+######## Appendix III: Hydrographs for one hydrological year comparison {.appendix}
+
+![Hydrographs comparison of subbasins located in the different geological regions.](Figures/hydrographs_comp.png){#fig-hydrographs}
+
+
+#### NEW APPENDIX
+
+
+

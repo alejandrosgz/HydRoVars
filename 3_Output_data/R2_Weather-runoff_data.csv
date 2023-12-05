@@ -1,0 +1,20 @@
+Region,Basin_ID,Basin,Mean Temperature,Mean Precipitation,Mean Runoff rate,Min Runoff rate,Max Runoff rate
+IMP,1,Navaluenga,10.3,897,0.374,0.264,0.565
+IMP,2,Matallana,9.75,907,0.473,0.25,0.573
+IMP,3,Villarejo de Montalban,14.68,592,0.136,0.033,0.292
+CRB,4,Peralejo de las Truchas,9.35,770,0.38,0.215,0.488
+CRB,5,Priego Escabas,11.4,733,0.374,0.241,0.455
+CRB,6,Santa Maria del Val,9.92,783,0.45,0.191,0.741
+DTH,7,Jabalera,13.69,469,0.086,0.034,0.242
+DTH,8,Huete,13.26,534,0.052,0.025,0.102
+DTH,9,Torote,13.95,486,0.056,0.03,0.103
+DTH,10,La Pueblanueva,15.32,522,0.064,0.013,0.152
+DTL,11,Ventosa,10.62,553,0.079,0.045,0.144
+DTL,12,La Peraleja,13.19,541,0.021,0.006,0.059
+DTL,13,Villasequilla de Yepes,15.2,356,0.019,0.009,0.025
+MIX,14,Valverde de los Arroyos,9.72,873,0.364,0.201,0.479
+MIX,15,Malpica,15.06,555,0.168,0.046,0.307
+MIX,16,Taravillas,10.1,695,0.188,0.086,0.296
+MIX,17,Romanones,12.57,534,0.063,0.042,0.095
+MIX,18,Priego Trabraque,12.56,626,0.034,0.009,0.081
+MIX,19,Bujalaro,11.34,508,0.106,0.065,0.14
