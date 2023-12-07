@@ -79,24 +79,24 @@
    
    
    # File with IDs, names, regions and areas of the basin, and gauging stations codes  
-   basins_file <- read.csv("Used_files/Created_csv/1_basins_file.csv") 
+   basins_file <- read.csv("1_Used_files/Created_csv/1_basins_file.csv") 
    
    # Gaugin stations data
-   gauging_data_tagus <- read.csv("Used_files/Data/Gauging_data/afliq.csv", sep = ";") %>% 
+   gauging_data_tagus <- read.csv("1_Used_files/Data/Gauging_data/afliq.csv", sep = ";") %>% 
      tibble(.,"cod" = indroea, "date" = fecha, "obs_flow" = caudal) %>% 
      .[, c("cod", "date", "obs_flow")] %>% mutate(date = dmy(date))
    
    #Alphas calculated in previous script
-   alphas_tibble <- read.csv("Used_files/Created_csv/3_alpha_estimation.csv")
+   alphas_tibble <- read.csv("1_Used_files/Created_csv/3_alpha_estimation.csv")
    
    
    # Daily precipitation obtention
-   path <- "Used_files/Data/Climate_data_extracted/pcp_spain/" # Directory where the precipitation file for each point of the grid is located
+   path <- "1_Used_files/Data/weather_data/pcp_spain/" # Directory where the precipitation file for each point of the grid is located
    init_date <- as.Date("1951-01-01")
    end_date <- as.Date("2019-12-31")
    dates <- seq(init_date, end_date, 1) # A sequence of dates for the entire period with data is created
    period_dates <- tibble(dates) %>% filter(., year(dates) %in% 2010:2018)
-   pcp_grid_points <-  read.csv("Used_files/Created_csv/2_ids_stations_file.csv") %>% arrange(., Basin_ID)  # File with IDs, names, and location of the grid points, and basins data  
+   pcp_grid_points <-  read.csv("1_Used_files/Created_csv/2_ids_stations_file.csv") %>% arrange(., Basin_ID)  # File with IDs, names, and location of the grid points, and basins data  
    
    # Loop for calculating the daily precipitation of each basin 
    pcpday_bas_list <- list()
@@ -123,10 +123,10 @@
    
    
    # Period that is being analysed (years)
-   evaluated_period <- c(2010:2018) # USER ACTION
+   evaluated_period <- c(2010:2018) # User action: Define the study period
    
    ##### 0 --> Extracting data for each subbasin: Define the Basin_ID #####  
-   basin_ID <- 19 # USER ACTION
+   basin_ID <- 1 # User action: Define the subbasin to analyse
    
    basin_information <- paste("Basin ", basins_file$Basin_ID[basin_ID], ", ",
                               basins_file$Basin[basin_ID], " (gauging code = ",
@@ -163,8 +163,8 @@
    mean(alpha_info$alpha_value)
    
    #Filter parameters
-   alpha <- 0.993 # USER ACTION
-   bfi_max <- 0.5 # USER ACTION
+   alpha <- 0.99  # User action: define the alpha parameter value
+   bfi_max <- 0.4 # User action: define the BFImax parameter value
    
   
    ##### 2 --> Apply the filter to estimate baseflow #####  
@@ -252,12 +252,12 @@
    
    ##### 5 --> Create and save output data for all the basin #####  
    
-  # basins_gwc_data <- c() # USER ACTION: Remove the # and run, then include again the #. This line should be run only one time, after the first basin evaluation
+  # basins_gwc_data <- c() # User action: Remove the # and run, then include again the #. This line should be run only one time, after the first basin evaluation
 
    basins_gwc_data <- basins_gwc_data %>% rbind(., basin_gwc_data)
 
-   write.csv(basins_gwc_data, #  USER ACTION: Remove the # and run, then include again the #. These lines should be run only one time, after the last basin evaluation
-             "Used_files/Created_csv/4_groundwater_results.csv", quote = F, row.names = F)
+   write.csv(basins_gwc_data, #  User action: Remove the # and run, then include again the #. These lines should be run only one time, after the last basin evaluation
+             "1_Used_files/Created_csv/4_groundwater_results.csv", quote = F, row.names = F)
 
     
 #### END OF SCRIPT TO ESTIMATE GROUNDWATER CONTRIBUTION ####
@@ -267,7 +267,7 @@
    #### REPORT TABLES ####
    
    # Reading the saved data
-   gw_output_file <- read.csv("Used_files/Created_csv/4_groundwater_results.csv")
+   gw_output_file <- read.csv("1_Used_files/Created_csv/4_groundwater_results.csv")
    
    
    #####  Report table 5: Results at basin scale   ##### 
@@ -281,7 +281,7 @@
             "BFImax used" = "bfi_max_used",
             "Estimated baseflow contribution" = "BF_Rate")
    
-   write.csv(basin_gw_values, "Output_data/R5_Groundwater_contribution_basin.csv", quote = F, row.names = F) 
+   write.csv(basin_gw_values, "3_Output_data/R4_Groundwater_contribution_basin.csv", quote = F, row.names = F) 
    
    
    
@@ -300,186 +300,6 @@
             "Mean estimated baseflow contribution" = "mean_bfr",
             "Baseflow contribution standard deviation" = "sd_bfr")
    
-   write.csv(region_gw_values, "Output_data/R6_Groundwater_contribution_region.csv", quote = F, row.names = F) 
+    gt(region_gw_values)
    
    
-   
-   #### Plots #### 
-   
-   # Parameters effect assessment
-   
-   priegoes_flow <-  gauging_data_tagus %>% filter(., cod == 3045) %>% filter(year(date) %in% 2010:2018) %>% mutate(day = seq(1, length(date), 1))
-   obs_data <- as.data.frame(priegoes_flow)
-   
-   # Alpha effect
-   bfsep <- c()
-   bf <- c()
-   bfs <- c()
-   alpha <- c()
-   alphas <- c()
-   id <- c()
-   ids <- c()
-   
-   np <- 30 # Number of simulations
-   alpha_min <- 0.9 # Minimum alpha value
-   alpha_max <- 0.995 # Maximum alpha value
-   BFI_MAX <-0.6 # BFIMax value
-   
-   alpha_var <- (alpha_max-alpha_min)/np # Alpha value variation
-   
-   for(i in 1:np){ # Running the filter 30 times changing alpha value
-     bfsep <- baseflow_sep(df = obs_data, Q = "obs_flow", alpha = alpha_min+(i*alpha_var), BFIma = BFI_MAX, method = "two_param")
-     bf <- bfsep$B
-     bf[1] <- bf[2]
-     bfs <- c(bfs, bf)
-     alpha <-  rep(alpha_min+(i*alpha_var), length(bf))
-     alphas <- c(alphas, alpha)
-     id <- rep(paste("run_",i), length(bf)) 
-     ids <- c(ids, id)
-   }
-   
-   baseflows_alpha_chg <- tibble(bfs, alphas, ids, obs = rep(obs_data$obs_flow,np), days = rep(1:length(bf), np)) 
-   
-   asss_alpha <- ggplot(baseflows_alpha_chg)+ geom_line(aes(x = days, y = bfs, group = ids, colour = alphas), size = 1)+ # Plot of the simulations
-     geom_line(aes(x= days, y = obs),  colour = "black", size = 1.1)+ 
-     scale_colour_gradient(
-       high = "#132B43",
-       low = "#E0FFFF",
-       space = "Lab",
-       na.value = "red",
-       guide = "colourbar",
-       aesthetics = "colour")+
-     xlim(c(1140,1220))+ylim(c(0,45))+xlab("Time (days)")+ylab("Streamflow (m³/s)")+labs(colour = "Alpha value")+
-     ggtitle("Alpha parameter effect (BFIMax = 0.6)")+theme_bw()+theme(text = element_text(size = 18), axis.text = element_text(size = 16, color = "black"))
-   
-    alpha_plot <- asss_alpha
-    
-   # BFImax effect
-   bfsep <- c()
-   bfs <- c()
-   bfis <- c()
-   alpha <- c()
-   alphas <- c()
-   id <- c()
-   ids <- c()
-   
-   np <- 30  # Number of simulations
-   bfi_min <- 0.1 # Minimum BFIMax value
-   bfi_max <- 0.8 # Maximum BFIMax value
-   
-   bfi_var <-(bfi_max - bfi_min)/np  # BFIMax value variation
-   
-   alpha_used <-  0.985 # alpha value
-   
-   for(i in 1:np){ # Running the filter 30 times changing alpha value
-     bfsep <- baseflow_sep(df = obs_data, Q = "obs_flow", alpha = alpha_used, BFIma = bfi_min+(i*bfi_var), method = "two_param")
-     bf <- bfsep$B
-     bf[1] <- bf[2]
-     bfs <- c(bfs, bf)
-     bfi_used <-  rep(bfi_min+(i*bfi_var), length(bf))
-     bfis <- c(bfis, bfi_used)
-     id <- rep(paste("run_",i), length(bf)) 
-     ids <- c(ids, id)
-   }
-   
-   baseflows_bfi_chg <- tibble(bfs, bfis, ids, obs = rep(obs_data$obs_flow,np), days = rep(1:length(bf), np)) 
-   
-   asss_bfimax <- ggplot(baseflows_bfi_chg)+ geom_line(aes(x = days, y = bfs, group = ids, colour = bfis), size = 1)+ # Plot of the simulations
-     geom_line(aes(x= days, y = obs),  colour = "black", size = 1.1)+ 
-     scale_colour_gradient(
-       high = "#132B43",
-       low = "#E0FFFF",
-       space = "Lab",
-       na.value = "red",
-       guide = "colourbar",
-       aesthetics = "colour")+
-     xlim(c(1140,1220))+ylim(c(0,45))+xlab("Time (days)")+ylab("Streamflow (m³/s)")+labs(colour = "BFIMax value")+
-     ggtitle("BFIMax parameter effect (alpha = 0.985)")+theme_bw()+theme(text = element_text(size = 18), axis.text = element_text(size = 16, color = "black"))
-   
-   bfi_plot <- asss_bfimax
-
-   
-  library(patchwork)
-  pars_effect_plot <-  bfi_plot + alpha_plot # Plot of the two parameters effect
-  
-  #ggsave(plot = pars_effect_plot, filename = "Figures/parameters_effect_plot.tiff",
-         device = "png", width = 18, height = 12, dpi = 600)
-  
-  
-  
-  # Baseflow filter example plot  
-  
-  # Example of baseflow filter application to Subbasin 4
-  # Mean Alpha obtained : 0.982, Max 0.986, Min 0.976
-  peralejo_flow <-  gauging_data_tagus %>% filter(., cod == 3001) %>% 
-    filter(year(date) %in% 2010:2018) %>% 
-    mutate(day = seq(1, length(date), 1))
-  peralejo_pcp <- pcpday_bas_list[[4]] 
-  # Joining pcp and streamflow data by date and creating data frame
-  peralejo_all <- peralejo_flow %>% left_join(peralejo_pcp, "date") %>% 
-    as.data.frame(.[,c(1,2,4,3,5)])
-  #Filter parameters
-  alpha <- 0.982
-  bfi_max <- 0.5
-  # Running the filter
-  bfsep <- baseflow_sep(df = peralejo_all, 
-                        Q = "obs_flow", 
-                        alpha = alpha, 
-                        BFIma =bfi_max, 
-                        method = "two_param")
-  bfsep_tibble <- peralejo_all %>% mutate(baseflow = bfsep$B, #baseflow
-                                          runoff = bfsep$R)   #runoff
-  # Calculating the streamflow contribution
-  sum(bfsep_tibble$baseflow) / (sum(bfsep_tibble$baseflow)+sum(bfsep_tibble$runoff))
-  # Checking the adjustment for one of the peaks
-  peak_2 <- bfsep_tibble[c(1440:1710),]
-  bf_plot_2 <- ggplot(peak_2, aes(x = date))+ geom_area(aes(y = obs_flow, fill = "Observed"))+ 
-    geom_area(aes(y = baseflow, fill = "Baseflow"))+ scale_fill_manual(values = c("dimgray", "cornflowerblue"))+theme_bw()+ 
-    ylab("Streamflow (m³/s)")+xlab("")+ theme(text = element_text(size = 15))+labs(fill = "")
-  pcp_plot2 <- ggplot(peak_2, aes( x=date))+geom_bar(aes(y = precipitation), stat = "identity", position = "identity", fill =     "skyblue")+  scale_y_reverse()+theme_bw()+
-    xlab(label = "")+theme(axis.text.x = element_blank(), axis.ticks.x = element_blank(), text = element_text(size = 15))+ylab("Precipitation (mm)")
-  plot_b4 <- (pcp_plot2 / bf_plot_2 )+plot_layout(widths = c(2, 2), heights = c(3, 5)) 
-  
-  #ggsave(plot = plot_b4, filename = "Figures/subb_4_bfsep.png",
-         device = "png", width = 10, height = 8, dpi = 600)
-  #ggsave(plot = plot_b4, filename = "Figures/subb_4_bfsep.tiff",
-         device = "tiff", width = 10, height = 8, dpi = 600)
-  
-
-
-
-  # Example plot of time scale effect on baseflow separation
-  
-  # Example with Basin 6, Priego Escabas, gauging code = 3045, region = CRB
-  #Mean Alpha obtained : 0.975, Max 0.99,  Min 0.965
-  
-  priegoes_flow <-  gauging_data_tagus %>% filter(., cod == 3045) %>% filter(year(date) %in% 2010:2018) %>% 
-    mutate(day = seq(1, length(date), 1))
-  
-  obs_data <- as.data.frame(priegoes_flow)
-  
-  #Filter parameters
-  alpha <- 0.985
-  bfi_max <- 0.6
-  
-  bfsep <- baseflow_sep(df = obs_data, Q = "obs_flow", alpha = alpha, BFIma =bfi_max, method = "two_param") # Running the filter
-  n <- priegoes_flow %>% mutate(baseflow = bfsep$B, runoff = bfsep$R)
-  
-  # Peak example:  1070:1300
-  peak_1 <- n[c(1070:1300),]
-  bf_plot_1 <- ggplot(peak_1, aes(x = date))+ geom_area(aes(y = obs_flow, fill = "Total streamflow"))+ 
-    geom_area(aes(y = baseflow, fill = "Estimated baseflow"))+ scale_fill_manual(values = c("dimgray", "cornflowerblue"))+theme_bw()+ 
-    ylab("Streamflow (m³/s)")+xlab("")+ theme(text = element_text(size = 14), legend.position = "NN")+labs(fill = "")
-  
-  # Entire period
-  bf_plot <- ggplot(n, aes(x = date))+ geom_area(aes(y = obs_flow, fill = "Total streamflow"))+ 
-    geom_area(aes(y = baseflow, fill = "Estimated baseflow"))+ scale_fill_manual(values = c("dimgray", "cornflowerblue"))+theme_bw()+ 
-    ylab("Flow (m³/s)")+xlab("")+ theme(text = element_text(size = 14), legend.position = "NN")+labs(fill = "") + 
-    annotate("rect",xmin = as.Date(peak_1$date[1]), xmax = as.Date(peak_1$date[length(peak_1$date)]), 
-             ymin = -2, ymax = 45,  color = "blue", linetype = 2, fill = "transparent")
-  
-  # Plot comparing the peak regarding the entire time period
-  plott <- bf_plot_1 /bf_plot 
-  
-  #ggsave(plot = plott, filename = "Figures/subb_4_bfsep.png",
-         device = "png", width = 14, height = 10, dpi = 600)

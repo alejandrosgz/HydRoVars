@@ -21,7 +21,7 @@
 # An output csv file with the obtained alpha values and the determination coefficient has been generated (3_alpha_estimation)     
 
 # The user should use the SCRIPT FOR OBTAINING ALPHA VALUES section to obtain the information for each basin.
-# All the steps where the user have to make an action are indicated as # USER ACTION, and an explanation is included
+# All the steps where the user have to make an action are indicated as # User action, and an explanation is included
 
 # At the end of the script, the analysis performed for each of the evaluated subbasins of the presented work are included in section
 
@@ -37,20 +37,20 @@ library(patchwork)
 #### RUN THIS FIRST ####
 
 # Streamflow data
-gauging_data_tagus <- read.csv("Used_files/Data/Gauging_data/afliq.csv", sep = ";") %>% 
+gauging_data_tagus <- read.csv("1_Used_files/Data/Gauging_data/afliq.csv", sep = ";") %>% 
   tibble(.,"cod" = indroea, "date" = fecha, "obs_flow" = caudal) %>% 
   .[, c("cod", "date", "obs_flow")] %>% mutate(date = dmy(date))
 
 # File with IDs, names, regions and areas of the basin, and gauging stations codes  
-basins_file <- read.csv("Used_files/Created_csv/1_basins_file.csv") 
+basins_file <- read.csv("1_Used_files/Created_csv/1_basins_file.csv") 
 
 # Daily precipitation obtention
-path <- "Used_files/Data/Climate_data_extracted/pcp_spain/" # Directory where the precipitation file for each point of the grid is located
+path <- "1_Used_files/Data/Climate_data_extracted/pcp_spain/" # Directory where the precipitation file for each point of the grid is located
 init_date <- as.Date("1951-01-01")
 end_date <- as.Date("2019-12-31")
 dates <- seq(init_date, end_date, 1) # A sequence of dates for the entire period with data is created
 period_dates <- tibble(dates) %>% filter(., year(dates) %in% 2010:2018)
-pcp_grid_points <-  read.csv("Used_files/Created_csv/2_ids_stations_file.csv") %>% arrange(., Basin_ID)  # File with IDs, names, and location of the grid points, and basins data  
+pcp_grid_points <-  read.csv("1_Used_files/Created_csv/2_ids_stations_file.csv") %>% arrange(., Basin_ID)  # File with IDs, names, and location of the grid points, and basins data  
 
 # Loop for calculating the daily precipitation of each basin 
 pcpday_bas_list <- list()
@@ -75,10 +75,10 @@ for(i in 1:length(unique(pcp_grid_points$Basin_ID))){  # i --> Basin ID
 #### SCRIPT FOR OBTAINING ALPHA VALUES ####
 
 # Period that is being analysed (years)
-evaluated_period <- c(2010:2018) # USER ACTION
+evaluated_period <- c(2010:2018) # User action: Define the study period
 
 ##### 0 --> Extracting data for each subbasin: Define the Basin_ID #####  
-basin_ID <- 1 # USER ACTION
+basin_ID <- 1 # User action: Define the basin to analyse
 
 basin_information <- paste("Basin ", basins_file$Basin_ID[basin_ID], ", ",
                            basins_file$Basin[basin_ID], " (gauging code = ",
@@ -101,9 +101,9 @@ ggplotly(ggplot(basin_data, aes(x = day))+
            geom_col(aes(y = precipitation), fill = "deepskyblue")) # Check streamflow data and peak selection
 
 # Range of x values for the peaks 
-peak_1 <- c(660:835)  # USER ACTION
-peak_2 <- c(1100:1330)  # USER ACTION
-peak_3 <- c(2975:3120)  # USER ACTION
+peak_1 <- c(660:835)    # User action: define the beggining and end of the peak (x axis)
+peak_2 <- c(1100:1330)  # User action: define the beggining and end of the peak (x axis)
+peak_3 <- c(2975:3120)  # User action: define the beggining and end of the peak (x axis)
 
 
 #####  2 --> For each peak, define the starting and ending point for the recession #####  
@@ -125,9 +125,9 @@ ggplotly(ggplot(peak_1_data, aes(x = seq(1, length(date), 1)))+
 
 
 # Range of x values for the recession
-peak_1_recesion <- c(45:106) # USER ACTION
-peak_2_recesion <- c(111:200) # USER ACTION
-peak_3_recesion <- c(63:132) # USER ACTION
+peak_1_recesion <- c(45:106)  # # User action: define the beggining and end of the recession curve (x axis)
+peak_2_recesion <- c(111:200) # # User action: define the beggining and end of the recession curve (x axis)
+peak_3_recesion <- c(63:132)  # # User action: define the beggining and end of the recession curve (x axis)
 
 
 # The streamflow against date should be approximately a straigth line, specially at logarithm scale 
@@ -147,16 +147,17 @@ plot(log(peak_3_data$obs_flow[peak_3_recesion])~peak_1_data$date[peak_3_recesion
 
 # Peak 1
 
-reg_pk1 <- lm(log(peak_1_data$obs_flow[peak_1_recesion])~ seq(1, length(peak_1_data$date[peak_1_recesion]), 1))
-sum_reg_pk1 <- summary(reg_pk1) 
 
-rec_const_pk1 <- sum_reg_pk1$coefficients[2,1]
-adj_r2_pk1 <- sum_reg_pk1$adj.r.squared
-alpha_value <- 2.71828182846^(rec_const_pk1) 
+reg_pk1 <- lm(log(peak_1_data$obs_flow[peak_1_recesion])~ seq(1, length(peak_1_data$date[peak_1_recesion]), 1)) # Linear regression
+sum_reg_pk1 <- summary(reg_pk1) # Results of the regression
+
+rec_const_pk1 <- sum_reg_pk1$coefficients[2,1] # Slope of the curve
+adj_r2_pk1 <- sum_reg_pk1$adj.r.squared # Coefficient of determination
+alpha_value <- 2.71828182846^(rec_const_pk1)  # Alpha value calculation
 
 peak_1_recession_data <- tibble(Basin_ID = basin_ID,
                                 peak = 1,
-                                recess_days = length(peak_1_recesion),
+                                recess_days = length(peak_1_recesion), # Recession curve duration
                                 det_coef = adj_r2_pk1, 
                                 gw_rec_const = rec_const_pk1,
                                 alpha_value = alpha_value,
@@ -210,18 +211,18 @@ basin_alpha_estimation_table <- peak_1_recession_data %>% rbind(., peak_2_recess
 
 ##### 5 --> Create a table with the data for all the basins ##### 
 
-# alpha_estimation_table <- c() # USER ACTION: Remove the # and run, then include again the #. This line should be run only one time, after the first basin evaluation
+# alpha_estimation_table <- c() # User action: Remove the # and run, then include again the #. This line should be run only one time, after the first basin evaluation
 
 alpha_estimation_table <- alpha_estimation_table %>%  rbind(basin_alpha_estimation_table)
 
 
 ##### 6 --> Save the created table ##### 
 
-#  alpha_estimation_table %>%  #  USER ACTION: Remove the # and run, then include again the #. These lines should be run only one time, after the last basin evaluation
+#  alpha_estimation_table %>%  #  User action: Remove the # and run, then include again the #. These lines should be run only one time, after the last basin evaluation
 #  left_join(., basins_file[,c("Basin", "Basin_ID", "region")], "Basin_ID") %>% 
 #  select(-basin_info) %>% 
 #  write.csv(.,      
-#          "Used_files/Created_csv/3_alpha_estimation_n.csv", quote = F, row.names = F)
+#          "1_Used_files/Created_csv/3_alpha_estimation_n.csv", quote = F, row.names = F)
 
 
 #### END OF SCRIPT FOR OBTAINING ALPHA VALUES ####
@@ -231,7 +232,7 @@ alpha_estimation_table <- alpha_estimation_table %>%  rbind(basin_alpha_estimati
 #### REPORT TABLES ####
  
 # Reading the saved data
-alphas_output_file <- read.csv("Used_files/Created_csv/3_alpha_estimation.csv")
+alphas_output_file <- read.csv("1_Used_files/Created_csv/3_alpha_estimation.csv")
 
 
 #####  Report table 3: Results at basin scale   ##### 
@@ -251,7 +252,7 @@ basin_alpha_values <- alphas_output_file %>%
   select(Basin_ID, Basin, region, recess_days, det_coef, gw_rec_const, alpha_value) %>% 
   arrange(., Basin_ID)
   
-write.csv(basin_alpha_values, "Output_data/R3_Groundwater_recession_basin.csv", quote = F, row.names = F) 
+write.csv(basin_alpha_values, "3_Output_data/R3_Groundwater_recession_basin.csv", quote = F, row.names = F) 
 
 colnames(basin_alpha_values) <- c("Basin ID", "Basin", "Region", 
                                   "Average recession duration", "Average determination coefficient",
@@ -261,7 +262,7 @@ colnames(basin_alpha_values) <- c("Basin ID", "Basin", "Region",
 gt(basin_alpha_values)
 
 
-#####  Report table 4: Results at region scale   ##### 
+#####  Results at region scale   ##### 
 
 basin_alpha_values <- alphas_output_file %>% 
   group_by(Basin, Basin_ID) %>% 
@@ -285,7 +286,6 @@ region_alpha_values <- basin_alpha_values %>%
   mutate(recess_days = as.integer(recess_days)) %>% 
   select(region, recess_days, det_coef, gw_rec_const, alpha_value) 
   
-write.csv(region_alpha_values, "Output_data/R4_Groundwater_recession_region.csv", quote = F, row.names = F) 
 
 colnames(region_alpha_values) <- c("Region", 
                                   "Average recession duration", "Average determination coefficient",

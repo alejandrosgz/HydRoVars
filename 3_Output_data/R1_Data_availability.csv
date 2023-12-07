@@ -1,20 +1,20 @@
-Basin ID,Basin,Period with available data,Complete data (2010-2018)
-1,Navaluenga,1974-2019,Yes
-2,Matallana,2010-2019,No, 273 days missing
-3,Villarejo de Montalban,1969-2019,Yes
-4,Peralejo de las Truchas,1945-2019,Yes
-5,Priego Escabas,1912-2019,Yes
-6,Santa Maria del Val,2010-2019,No, 273 days missing
-7,Jabalera,1977-2019,Yes
-8,Huete,1965-2019,Yes
-9,Torote,1972-2019,Yes
-10,La Pueblanueva,1978-2019,Yes
-11,Ventosa,1945-2019,Yes
-12,La Peraleja,1966-2019,Yes
-13,Villasequilla de Yepes,1971-2019,Yes
-14,Valverde de los Arroyos,2011-2019,No, 546 days missing
-15,Malpica,1972-2019,Yes
-16,Taravillas,1982-2019,Yes
-17,Romanones,1975-2019,Yes
-18,Priego Trabraque,1969-2019,Yes
-19,Bujalaro,1961-2019,Yes
+Basin_ID,Basin,Gauging_code,Area_sqkm,Range_obs_data,Study_period_data_avail
+1,Navaluenga,3231,699.31,1974-2019 (45),Complete
+2,Matallana,3049,252.26,2010-2019 (9),"Uncomplete Years = 2010, days left = 273"
+3,Villarejo de Montalban,3211,136.21,1969-2019 (50),Complete
+4,Peralejo de las Truchas,3001,408.56,1945-2019 (74),Complete
+5,Priego Escabas,3045,329.24,1912-2019 (107),Complete
+6,Santa Maria del Val,3040,117.79,2010-2019 (9),"Uncomplete Years = 2010, days left = 273"
+7,Jabalera,3249,85.16,1977-2019 (42),Complete
+8,Huete,3172,359.43,1965-2019 (54),Complete
+9,Torote,3193,254.67,1972-2019 (47),Complete
+10,La Pueblanueva,3251,222.35,1978-2019 (41),Complete
+11,Ventosa,3030,942.43,1945-2019 (74),Complete
+12,La Peraleja,3173,260.79,1966-2019 (53),Complete
+13,Villasequilla de Yepes,3164,1320.77,1971-2019 (48),Complete
+14,Valverde de los Arroyos,3165,279.32,2011-2019 (8),"Years without records = 2010 , Uncomplete Years = 2011, days left = 181"
+15,Malpica,3212,412.12,1972-2019 (47),Complete
+16,Taravillas,3268,184.27,1982-2019 (37),Complete
+17,Romanones,3237,319.21,1975-2019 (44),Complete
+18,Priego Trabraque,3186,389.17,1969-2019 (50),Complete
+19,Bujalaro,3060,1027.91,1961-2019 (58),Complete

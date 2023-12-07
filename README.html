@@ -352,15 +352,16 @@ display: none;
 </div>
 
 
-<div id="soft-data-collection-for-realistic-hydrological-modelling" class="section level1">
-<h1>Soft data collection for realistic hydrological modelling</h1>
+<div id="hydrovars-soft-data-collection-for-realistic-hydrological-modelling" class="section level1">
+<h1>HYDROVARS: Soft data collection for realistic hydrological
+modelling</h1>
 <p>This is the accompanying code repository for the manuscript <em>“Soft
 data collection for realistic hydrological modelling: a reproducible
-methodology developed in R for the Tagus River basin”</em>. The
-repository contains the data and code which were used to perform the
-soft-data collection methodology presented in the manuscript. Feel free
-to use the methodology or any parts of the code, but please make sure to
-cite our work (see <a href="#license">License</a> and <a href="#citation">Citation</a>).</p>
+methodology developed in R for estimating the runoff coefficient and the
+baseflow index.”</em>. The repository contains the data and code which
+were used to perform the soft-data collection methodology presented in
+the manuscript. Feel free to use the methodology or any parts of the
+code, but please make sure to cite our work (see <a href="#license">License</a> and <a href="#citation">Citation</a>).</p>
 <div id="purpose-and-utility" class="section level3">
 <h3>Purpose and utility</h3>
 <p>In hydrology soft data can be used to characterize the hydrological
@@ -388,28 +389,26 @@ repository:</p>
 <li><p><strong>README</strong> (this file). It is recommended to read it
 to know how the repository has been structured and how this methodology
 can be applied in other regions.</p></li>
-<li><p><strong>soft_data_paper.qmd</strong> Contains all the work and
-data presented in the manuscript. In this file, the relevant parts of
-the code can be found (which can be also be found in the scripts) and
-some examples have been introduced. The code to reproduce all the
-results of the presented manuscript can be found in the
-<strong>scripts</strong> folder. This document can be used to generate
-different output formats of the document
-(<strong>soft_data_paper.docx</strong>,
-<strong>soft_data_paper.html</strong>), which are also located in the
-main repository directory. Note that the qmd document has been optimized
-to rendering to html.</p></li>
-<li><p><strong>Paper_soft_data_collection.bib</strong> contains the
-references in BibTex format, generated with the software
-<em>Zotero</em>.</p></li>
+<li><p><strong>Manuscript.qmd</strong> Contains all the work and data
+presented in the manuscript. In this file, the relevant parts of the
+code can be found (which can be also be found in the scripts) and some
+examples have been introduced. The code to reproduce all the results of
+the presented manuscript can be found in the <strong>2_Scripts</strong>
+folder. This document can be used to generate different output formats
+of the document (<strong>Manuscript.docx</strong>,
+<strong>Manuscript.html</strong>), which are also located in the main
+repository directory. Note that the qmd document has been optimized to
+rendering to html.</p></li>
+<li><p><strong>Manuscript.bib</strong> contains the references in BibTex
+format, generated with the software <em>Zotero</em>.</p></li>
 </ul>
 <p>Other files are related to the repository functioning or to the
 output adjustments and can be ignored.</p>
-<p>Within the repository, three directories can be found:</p>
+<p>Within the repository, four directories can be found:</p>
 <div id="used_files-directory" class="section level4">
-<h4>1. used_files directory</h4>
+<h4>1. Used_files directory</h4>
 <p>The data necessary to reproduce the work is located in the
-<strong>used_files</strong> folder, which contains three folders
+<strong>Used_files</strong> folder, which contains three folders
 within:</p>
 <ul>
 <li><p><strong>Created_csv</strong> Contains the csv files that should
@@ -438,29 +437,32 @@ contiguous subbasins). Note that in this case, precipitation and
 temperature points IDs were the same, but if not one file for each grid
 should be created and used. Created with Script 1.</p></li>
 <li><p><strong>3_alpha_estimation.csv</strong> This file contains for
-each basin the alpha obtained with the regression for the three peaks
-(<em>alphas</em>) and their determination coefficients
-<em>det_coefs</em>. The name, ID and region of each basin is also
-included. Created with the results of the Script 3
+each basin the duration of the recession curve (<em>recess_days</em>)
+and the coefficient of determination obtained with their regression
+(<em>det_coefs</em>), the data necessary to reproduce the peaks and
+recession curves (<em>peak</em>, <em>peak_range</em>,
+<em>recess_range</em>), and the groundwater recession constant and alpha
+obtained for the three peaks
+(<em>gw_rec_const</em>,<em>alpha_valu</em>). The name, ID and region of
+each basin is also included. Created with Script 3
 (<strong>script_3_alphas_calculation.R</strong>).</p></li>
-<li><p><strong>4_groundwater_results.csv</strong> This file has been
-used to save the data obtained during the baseflow index estimation.
-Concretely, for each basin, the alpha and BFImax parameters values used
-for the filter and the estimated baseflow index (columns <em>alpha</em>,
-<em>BFImax</em>, <em>BF_Rate</em>, respectively) are stored. Created
-with the results of the Script 4
+<li><p><strong>4_groundwater_results.csv</strong> This file contains the
+data obtained during the baseflow index estimation. Concretely, for each
+basin, the alpha and BFImax parameters values used for the filter and
+the estimated baseflow index (columns <em>alpha</em>,
+<em>BFImax_used</em>, <em>BF_Rate</em>, respectively) are stored.
+Created with the Script 4
 (<strong>script_4_Groundwater_contribution_estimation.R</strong>).</p></li>
 </ul></li>
 <li><p><strong>Data</strong> This directory contains two folders:</p>
 <ul>
-<li><p><strong>climate_data_extracted</strong> Contains two folders (one
-for each variable, <em>pcp_spain</em> and <em>tmp_spain</em>,
-respectively) which contain the files with the data for each point of
-the grid used in this work. Files for all the Spanish territory can be
-downloaded from (<a href="https://swat.tamu.edu/data/spain/" class="uri">https://swat.tamu.edu/data/spain/</a>). These files have one
+<li><p><strong>weather_data</strong> Contains two folders (one for each
+variable, <em>pcp_spain</em> and <em>tmp_spain</em>, respectively) which
+contain the files with the data for each point of the grid used in this
+work. Files for all the Spanish territory can be downloaded from (<a href="https://swat.tamu.edu/data/spain/" class="uri">https://swat.tamu.edu/data/spain/</a>). These files have one
 column with the daily value of the variable, being the name of the
 column the initial date of the time series (19510101).</p></li>
-<li><p><strong>Gauging_data</strong> Contains the file
+<li><p><strong>gauging_data</strong> Contains the file
 <strong>afliq.csv</strong>, downloaded from (<a href="https://ceh.cedex.es/anuarioaforos/TAJO_csv.asp" class="uri">https://ceh.cedex.es/anuarioaforos/TAJO_csv.asp</a>). This
 file contains daily streamflow data for all the gauging stations located
 within the Tagus River basin, and have four columns: the gauging station
@@ -474,24 +476,27 @@ raster data used for this work. It have two folders:</p>
 <li><p><strong>Shapefiles</strong> Directory that includes the shp (and
 related) files that has been used for this work: the upper sector of the
 Tagus River basin (<strong>modeled_basin</strong>), the delineated
-subbasins (<strong>basins_studied</strong>), weather grids
-(<strong>grid_tagus</strong>), gauging stations
+subbasins (<strong>basins_studied</strong>), weather points of the
+entire AEMET grid (<strong>weather_grid_UTM</strong>), gauging stations
 (<strong>gauging_stations</strong>) and the permeability
-map(<strong>permeabilit_map</strong>).</p></li>
-<li><p><strong>Delineation.zip</strong> Compressed folder which contains
-three raster layers: the digital elevation model
+map(<strong>permeabilit_map</strong>). A csv file created from the
+permeability map and the basins studied files contains the proportion of
+each subbasin conformed by each lithology
+(<strong>Basins_lithology.csv</strong>).</p></li>
+<li><p><strong>c_Delineation.zip</strong> Compressed folder which
+contains three raster layers: the digital elevation model
 (<strong>ClipMDTproj.tif</strong>) used to create the drainage direction
 (<strong>drainage_direction_Tagus.tif</strong>) and accumulation rasters
 (<strong>drainage_acumulation_Tagus.tif</strong>), which were used to
-delineate the subbasins. This file was compressed to reduce its
-weight.</p></li>
+delineate the subbasins with the GRASS tools. This file was compressed
+to reduce its weight.</p></li>
 </ul></li>
 </ul>
 </div>
 <div id="scripts-directory" class="section level4">
-<h4>2. scripts directory</h4>
+<h4>2. Scripts directory</h4>
 <p>The code for reproducing all the results of the paper can be found in
-the folder <strong>scripts</strong>, where 5 scripts are located:</p>
+the folder <strong>scripts</strong>, where 4 scripts are located:</p>
 <ul>
 <li><p><strong>script_1_CSV_files_preparation.R</strong> Can be used to
 create the csv files needed to use this methodology. As inputs, two
@@ -503,21 +508,41 @@ the annual precipitation, temperature, runoff and runoff coefficient can
 be calculated.</p></li>
 <li><p><strong>script_3_alphas_calculation.R</strong> Allow to calculate
 the <em>alpha</em> values using a linear regression. Three recession
-curves for each subbasins have been performed, and the determination
-coefficient and standard variation values have been extracted.</p></li>
+curves for each subbasin have been performed, and the length of the
+recession curve, the determination coefficient, the groundwater
+recession constant, and the alpha values with their standard deviation
+have been extracted.</p></li>
 <li><p><strong>script_4_Groundwater_contribution_estimation.R</strong>
 Include all the code necessary to apply the baseflow filter for three
-peaks in each subbasins and calculating the groundwater contribution to
-the streamflow.</p></li>
-<li><p><strong>script_5_Plots_scripts.R</strong> Can be used to generate
-the figures included in the manuscript. Note that Figure 2 it is not
-possible to be reproduced with the included precipitation data, as it
-uses data from all the upper third of the Tagus River basin.</p></li>
+peaks in each subbasin and calculate the groundwater contribution to the
+streamflow.</p></li>
 </ul>
 </div>
-<div id="figs-directory" class="section level4">
-<h4>3. Figs directory</h4>
-<p><strong>Figs</strong> directory contains the images used in the
+<div id="output_data-directory" class="section level4">
+<h4>3. Output_data directory</h4>
+<p>In addition to the created files explained above, which are created
+during the workflow and are in some cases needed for the different
+process, this folder contains some output files with the most important
+generated data. Four files are automatically generated:</p>
+<ul>
+<li><p><strong>R1_Data_availability.csv</strong> Information about the
+studied subbasins and the availability of observed data.</p></li>
+<li><p><strong>R2_Weather-runoff_data.csv</strong> For each subbasin,
+contains some of the data generated with the script 2 (average
+precipitation, average temperature, and statistics of the runoff
+coefficient).</p></li>
+<li><p><strong>R3_Groundwater_recession_basin.csv</strong> For each
+subbasin, contains some of the data generated with the script 3 (average
+recession curve duration, coefficient of determination, recession
+constant and alpha).</p></li>
+<li><p><strong>R4_Groundwater_contribution_basin.csv</strong> Contains
+the same information that <strong>4_groundwater_results.csv</strong>,
+the results of the groundwater contrivution estimation.</p></li>
+</ul>
+</div>
+<div id="figures-directory" class="section level4">
+<h4>4. Figures directory</h4>
+<p><strong>4_Figures</strong> directory contains the images used in the
 manuscript</p>
 </div>
 </div>
@@ -529,13 +554,13 @@ found. In this section the main workflow will be explained in brief.</p>
 would need to prepare:</p>
 <ul>
 <li><p>A vector file with the basins to be assessed. Instructions for
-delineating subbasins are located in the section 3.2 of the manuscript.
-It is recommended to adjust the fields of this layer in order to control
-the order to calculate the variables, i.e., indicating the name and
-creating IDs if multiple basins will be assessed. The code of the
-gauging station for each subbasin have to be included in this vector
-file or in the csv that it is created from it using the <strong>Script
-1</strong>.</p></li>
+delineating subbasins can be found in the GRASS module documentation
+(r.watershed, r.water.outlet and r.to.vect tools). It is recommended to
+adjust the fields of this layer in order to control the order to
+calculate the variables, i.e., indicating the name and creating IDs if
+multiple basins will be assessed. The code of the gauging station for
+each subbasin have to be included in this vector file or in the csv that
+it is created from it using the <strong>Script 1</strong>.</p></li>
 <li><p>A vector file with the weather data. In this case, a grid has
 been used, but this is not strictly necessary. Note that, if no grid is
 used, the average values of the points may not be accurately
@@ -557,29 +582,31 @@ obtained with these scripts, as it has been done in the example.</p>
 </div>
 <div id="license" class="section level3">
 <h3>License</h3>
-<p>The content of this repository is licensed under the MIT License.</p>
+<p>The content of this repository is licensed under the <a href="https://github.com/alejandrosgz/Hydro_vars_collection/blob/main/LICENSE">MIT
+License</a>.</p>
 </div>
 <div id="citation" class="section level3">
 <h3>Citation</h3>
-<p><strong>Note</strong>: Currently this project is work in progress and
-the manuscript is about to be submitted. Please check the citation for
-an update .</p>
+<p><strong>Note</strong>: This project is currently work in progress and
+the manuscript is about to be submitted. Please check the citation at a
+later time for updates.</p>
 <p>Sánchez Gómez A.: <em>Soft data collection for realistic hydrological
 modelling: a reproducible methodology developed in R for the Tagus River
-basin</em>, GitHub Repository, <a href="https://github.com/alejandrosgz/Soft_data_collection_methodology" class="uri">https://github.com/alejandrosgz/Soft_data_collection_methodology</a>,
+basin</em>, GitHub Repository, <a href="https://github.com/alejandrosgz/Hydro_vars_collection" class="uri">https://github.com/alejandrosgz/Hydro_vars_collection</a>,
 2023.</p>
 <pre><code>@misc{alejandrosgz2023,
   author  = {Alejandro Sánchez Gómez},
   note    = {GitHub Repository},
   title   = {{Soft data collection for realistic hydrological modelling: a reproducible methodology developed in R for the Tagus River basin}},
   year    = {2023},
-  url     = {https://github.com/alejandrosgz/Soft_data_collection_methodology},
+  url     = {https://github.com/alejandrosgz/Hydro_vars_collection},
   version = {1.0},
 }</code></pre>
 </div>
 <div id="contact" class="section level3">
 <h3>Contact</h3>
-<p>Alejandro Sánchez Gómez <a href="mailto:my@email.adress" class="email">my@email.adress</a></p>
+<p>Alejandro Sánchez Gómez</p>
+<p><a href="mailto:alejandro.sanchezgomez97@gmail.com" class="email">alejandro.sanchezgomez97@gmail.com</a> <a href="mailto:alejandro.sanchezg@uah.es" class="email">alejandro.sanchezg@uah.es</a></p>
 </div>
 </div>
 
