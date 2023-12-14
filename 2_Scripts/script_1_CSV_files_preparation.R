@@ -14,12 +14,12 @@
    #setwd("......\Soft_data_collection_methodology")
    
    
-   # FILE 1.- Subbasins csv file
+   # FILE 1.- basins csv file
    
-   # Input data: Shapefile with the delineated subbasins. 
-   subbasins <- read_sf("1_Used_files/GIS/Shapefiles/basins_studied.shp") %>% arrange(., id)
+   # Input data: Shapefile with the delineated basins. 
+   basins <- read_sf("1_Used_files/GIS/Shapefiles/basins_studied.shp") %>% arrange(., id)
    # Changing column names
-   subbasins_csv <- subbasins %>% rename(Basin_ID = id) %>% 
+   basins_csv <- basins %>% rename(Basin_ID = id) %>% 
    #Calculating area
    mutate(area = st_area(.)) %>% 
    # Introducing the gauging stations codes (Manually) # User action: Introduce the gauging stations code
@@ -30,25 +30,25 @@
    st_drop_geometry(.) %>% 
    # Ordering table
    .[,c("Basin", "Basin_ID", "area", "gauging_code", "region")]
-   write.csv(x = subbasins_csv, file = "1_Used_files/Created_csv/1_basins_file.csv", row.names = F)
+   write.csv(x = basins_csv, file = "1_Used_files/Created_csv/1_basins_file.csv", row.names = F)
    
    
    # FILE 2. Gauging points csv file
    
-   #Input data: weather grid and delineated subbasins. NOTE THAT BOTH CRSs MUST BE THE SAME.
+   #Input data: weather grid and delineated basins. NOTE THAT BOTH CRSs MUST BE THE SAME.
    
    # Grid points: Note that the IDs for precipitation and temperature stations is constant, and therefore only one file is necessary.
    pcp_points <- read_sf("1_Used_files/GIS/Shapefiles/weather_grid_UTM.shp")
    
-   subbasins <- read_sf("1_Used_files/GIS/Shapefiles/basins_studied.shp") %>% arrange(., id)
+   basins <- read_sf("1_Used_files/GIS/Shapefiles/basins_studied.shp") %>% arrange(., id)
    
-   # 2.1. Buffer created for subbasins (1 km distance)
+   # 2.1. Buffer created for basins (1 km distance)
    
-   subbasins_buffer <- st_buffer(subbasins, dist = 1000) # User action: define buffer (m)
+   basins_buffer <- st_buffer(basins, dist = 1000) # User action: define buffer (m)
    
-   # 2.2.Clipping grid points with the subbasins buffer (region column is not necessary)
+   # 2.2.Clipping grid points with the basins buffer (region column is not necessary)
    
-   grid_points_clip <- st_intersection(pcp_points, subbasins_buffer[, c("id", "Basin", "geometry")])
+   grid_points_clip <- st_intersection(pcp_points, basins_buffer[, c("id", "Basin", "geometry")])
    
    # Spatial data is no longer necessary, and a variable is renamed before saving
    
@@ -60,7 +60,7 @@
    
    # Plot to see the selected points
    
-   subbasins$region <- factor(subbasins$region, levels = c("DTAL", "DTBJ", "CRB", "MIX", "IMP"), 
+   basins$region <- factor(basins$region, levels = c("DTAL", "DTBJ", "CRB", "MIX", "IMP"), 
                                        labels = c("Detrital, High permeability", "Detrital, Low permeability", 
                                                   "Carbonate", "Mixed", "Impervious"))
    pcps_selected_id <- grid_points_clip$ID
@@ -71,9 +71,9 @@
    
      ggplot()+
      geom_sf(data = tagus_upp, fill = "transparent", color = "black", linewidth = 1)+
-     geom_sf(data = subbasins, aes(fill = as.factor(id), color = region), linewidth = 1)+ labs(color = "Lithology")+
+     geom_sf(data = basins, aes(fill = as.factor(id), color = region), linewidth = 1)+ labs(color = "Lithology")+
      scale_color_manual(values = c("orange", "darkgrey", "blue", "purple", "red"))+
-     geom_sf(data = subbasins_buffer, fill = "transparent", linetype = 2, linewidth = 0.7)+
+     geom_sf(data = basins_buffer, fill = "transparent", linetype = 2, linewidth = 0.7)+
      guides(fill = "none")+ 
      geom_sf(data = grid_points, aes(shape = Selected_points), size = 2)+
      scale_shape_manual(values = c(1, 16))+

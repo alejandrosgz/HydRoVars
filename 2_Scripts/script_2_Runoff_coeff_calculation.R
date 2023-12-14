@@ -1,11 +1,11 @@
 #### SCRIPTS FOR ANALYSING HYDROLOGICAL PROCESSES: Calculation of Runoff coefficient and Baseflow index ####
 #### Script 2: Runoff coefficient calculation ####
    
-   # Methodology: the runoff coefficient for 19 subbasins within the upper sector of Tagus River basin has been calculated. Through this script,
-   # the anual precipitation and the anual runoff have been calculated, deriving the runoff coefficient.
+   # Study case: the runoff coefficient for 19 subbasins within the upper sector of Tagus River basin has been calculated. Through this script,
+   # the annual precipitation and the anual runoff have been calculated, deriving the runoff coefficient.
    # Temperature values in each of the basin has been also obtained in order to discuss the obtained runoff rate values.
 
-   # Previous csv files were prepared with Script 1: 1_basins_file and 2_ids_stations_file, which contain data about the subbasins and their weather data points
+   # Previous csv files were prepared with Script 1: 1_basins_file and 2_ids_stations_file, which contain data about the analysed basins and their weather data points
    # In addition, as input data, daily weather (precipitation and temperature) and streamflow data are being used (see manuscript or README file for more info).
 
    # Used libraries
@@ -307,15 +307,18 @@
    
      rm(min, max, mean)
       
- #####  Report table 2: precipitation, temperature, runoff coefficient data   ##### 
-      
      
+ #####  Report table 2: precipitation, temperature, runoff coefficient data   ##### 
+     
+     # If tmp data available
       # Anual values (not printed as output)
       runoff_tmp_annual_list <- list() #For each basin, a list for the annual values
       for(i in 1:length(tmp_bas_list)){
         tmp <- tibble(tmp_bas_list[[i]])
         runoff <- tibble(anual_runoff_rate[[i]])
-        tibb_merge <- left_join(tmp, runoff, "Year") %>% left_join(., basins_file[,c(1,2,5)], "Basin_ID") %>% .[,c(10,5,9,1,4,2,3,6,8)]
+        tibb_merge <- left_join(tmp, runoff, "Year") %>% 
+          left_join(., basins_file[, c("Basin", "Basin_ID", "region")], "Basin_ID") %>%
+          select(region, Basin_ID, Basin, Year, Tmp_mean, Tmp_min, Tmp_Max, Pcp, Runoff_rt )
         colnames(tibb_merge) <- c("Region", "Basin_ID", "Basin", "Year", "Mean Temperature", 
                                   "Min Temperature", "Max Temperature", "Mean Precipitation", "Runoff Rate")
         runoff_tmp_annual_list[[i]] <- tibb_merge
@@ -323,7 +326,8 @@
       
 
       runoff_rate_tibble <- tib_basin_runoff_rates %>% 
-        left_join(., temperature_tibb, "Basin_ID") %>% .[,c(1:3, 12,4, 6, 9, 8)] #For each basin, a summary table for all the period
+        left_join(., temperature_tibb, "Basin_ID") %>%#For each basin, a summary table for all the period
+        select(region, Basin_ID, Basin, means, Mean_pcp, Runoff_rate, min_runoff_rate, Max_runoff_rate)
       
       runoff_rate_tibble <- runoff_rate_tibble %>% 
         mutate(Mean_pcp = round(Mean_pcp,0), 
@@ -341,4 +345,35 @@
       
       gt(runoff_rate_tibble)
       
+      
+     # RUN ONLY If tmp data NOT available
+      # Anual values (not printed as output)
+  #   runoff_tmp_annual_list <- list() #For each basin, a list for the annual values
+  #   for(i in 1:length(tmp_bas_list)){
+  #     runoff <- tibble(anual_runoff_rate[[i]])
+  #     tibb_merge <- left_join(runoff, basins_file[, c("Basin", "Basin_ID", "region")], "Basin_ID") %>% 
+  #       select(region, Basin_ID, Basin, Year, Pcp, Runoff_rt )
+  #     colnames(tibb_merge) <- c("Region", "Basin_ID", "Basin", "Year", "Mean Precipitation", "Runoff Rate")
+  #     runoff_tmp_annual_list[[i]] <- tibb_merge
+  #   }
+  #   
+
+  #   runoff_rate_tibble <- tib_basin_runoff_rates %>% 
+  #     left_join(., temperature_tibb, "Basin_ID") %>%#For each basin, a summary table for all the period
+  #     select(region, Basin_ID, Basin, Mean_pcp, Runoff_rate, min_runoff_rate, Max_runoff_rate)
+  #   
+  #   runoff_rate_tibble <- runoff_rate_tibble %>% 
+  #     mutate(Mean_pcp = round(Mean_pcp,0), 
+  #            Runoff_rate = round(Runoff_rate,3),
+  #            min_runoff_rate = round(min_runoff_rate,3), 
+  #            Max_runoff_rate = round(Max_runoff_rate,3)) %>% 
+  #     select(., region, Basin_ID, Basin, Mean_pcp, Runoff_rate, min_runoff_rate, Max_runoff_rate)
+  #   
+  #   colnames(runoff_rate_tibble) <- c("Region", "Basin_ID", "Basin",
+  #                                     "Mean Precipitation", "Mean Runoff rate", 
+  #                                     "Min Runoff rate", "Max Runoff rate")
+  #   
+  #   write.csv(runoff_rate_tibble, "3_Output_data/R2_weather-runoff_data.csv", quote = F, row.names = F)
+  #   
+  #   gt(runoff_rate_tibble)
     

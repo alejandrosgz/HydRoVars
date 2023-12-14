@@ -14,8 +14,8 @@
    # For running the script FIRSTLY is necessary to run the "RUN THIS FIRST" section. This section contains the alpha values obtained, the streamflow data,
    # the code used to create a list with the daily precipitation for each basin and the baseflow filter function used to separate the hydrograph components.
     
-   # As input data, the files with streamflow data and wih the subbasins data have been used.
-   # An output csv file with the obtained baseflow index and the values of the parameters has been generadted (4_groundwater_results)     
+   # As input data, the files with streamflow data and wih the basins data have been used.
+   # An output csv file with the obtained baseflow index and the values of the parameters has been generated (4_groundwater_results)     
 
    # Used libraries
    library(readr)
@@ -125,8 +125,8 @@
    # Period that is being analysed (years)
    evaluated_period <- c(2010:2018) # User action: Define the study period
    
-   ##### 0 --> Extracting data for each subbasin: Define the Basin_ID #####  
-   basin_ID <- 1 # User action: Define the subbasin to analyse
+   ##### 0 --> Extracting data for each basin: Define the Basin_ID #####  
+   basin_ID <- 1 # User action: Define the basin to analyse
    
    basin_information <- paste("Basin ", basins_file$Basin_ID[basin_ID], ", ",
                               basins_file$Basin[basin_ID], " (gauging code = ",

@@ -16,14 +16,13 @@
 # The other coefficient is the Slope of the lineal regression, which is the groundwater recession coefficient * t, being t the number of days after t0.
 
 
-# As input data, the files with streamflow data and wih the subbasins data have been used. The daily precipitation has been used to select the peaks and the
+# As input data, the files with streamflow data and wih the basins data have been used. The daily precipitation has been used to select the peaks and the
 # start and end of the recession curve. Therefore, it is necessary to run the "RUN THIS FIRST" section.
 # An output csv file with the obtained alpha values and the determination coefficient has been generated (3_alpha_estimation)     
 
 # The user should use the SCRIPT FOR OBTAINING ALPHA VALUES section to obtain the information for each basin.
 # All the steps where the user have to make an action are indicated as # User action, and an explanation is included
 
-# At the end of the script, the analysis performed for each of the evaluated subbasins of the presented work are included in section
 
 # Used libraries
 library(readr)
@@ -77,7 +76,7 @@ for(i in 1:length(unique(pcp_grid_points$Basin_ID))){  # i --> Basin ID
 # Period that is being analysed (years)
 evaluated_period <- c(2010:2018) # User action: Define the study period
 
-##### 0 --> Extracting data for each subbasin: Define the Basin_ID #####  
+##### 0 --> Extracting data for each basin: Define the Basin_ID #####  
 basin_ID <- 1 # User action: Define the basin to analyse
 
 basin_information <- paste("Basin ", basins_file$Basin_ID[basin_ID], ", ",
