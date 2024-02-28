@@ -126,7 +126,7 @@
    evaluated_period <- c(2010:2018) # User action: Define the study period
    
    ##### 0 --> Extracting data for each basin: Define the Basin_ID #####  
-   basin_ID <- 1 # User action: Define the basin to analyse
+   basin_ID <- 18 # User action: Define the basin to analyse
    
    basin_information <- paste("Basin ", basins_file$Basin_ID[basin_ID], ", ",
                               basins_file$Basin[basin_ID], " (gauging code = ",
@@ -164,7 +164,7 @@
    
    #Filter parameters
    alpha <- 0.99  # User action: define the alpha parameter value
-   bfi_max <- 0.4 # User action: define the BFImax parameter value
+   bfi_max <- 0.45 # User action: define the BFImax parameter value
    
   
    ##### 2 --> Apply the filter to estimate baseflow #####  

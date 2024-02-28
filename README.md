@@ -1,12 +1,14 @@
-# HYDROVARS: Soft data collection for realistic hydrological modelling
+# HydRoVars: An R tool to collect hydrological variables
 
-This is the accompanying code repository for the manuscript *"Soft data collection for realistic hydrological modelling: a reproducible methodology developed in R for estimating the runoff coefficient and the baseflow index."*. The repository contains the data and code which were used to perform the soft-data collection methodology presented in the manuscript. Feel free to use the methodology or any parts of the code, but please make sure to cite our work (see [License](#license) and [Citation](#citation)).
+This is the accompanying code repository for the manuscript *"HydRoVars: An R tool to collect hydrological variables."*. The repository contains the data and code which were used to perform the soft-data collection methodology presented in the manuscript. Feel free to use the methodology or any parts of the code, but please make sure to cite our work (see [License](#license) and [Citation](#citation)).
 
 ### Purpose and utility
 
 In hydrology soft data can be used to characterize the hydrological behavior of a basin or region and can therefore be used in the soft calibration process for a hydrological model setup of a basin. In countries such as Spain there are several potential sources for collecting soft data for the entire territory, such as weather and hydrological data. Yet, studies which include soft data in hydrological modeling are few and often limited to small areas and short time series. 
 
 In this work, we present a soft data collection methodology to obtain soft data from available weather and streamflow data, while focusing on two variables: the runoff coefficient and the baseflow index. This methodology can be reproduced for any gauged catchment in Spain, and can be also used for any other region with similar available datasets. The upper part of the Tagus River basin has been used as study case, evaluating the two variables runoff coefficient and baseflow index in 19 subbasins of the Tagus River in different geological regions.
+
+In spite of the focus of this work is to collect hydrological variables, data and code to collect, analyse and represent weather (precipitation and temperature) data has been also include.
 
 
 ### Structure
@@ -61,6 +63,8 @@ The code for reproducing all the results of the paper can be found in the folder
  
  * **script_4_Groundwater_contribution_estimation.R** Include all the code necessary to apply the baseflow filter for three peaks in each subbasin and calculate the groundwater contribution to the streamflow. 
  
+ * **script_5_Weather_data_exploration.R** This script can be ignored if weather data analysis is not in our scope. It allow to obtain, export and analyze weather data at different scales, and migth be very useful to characterize the climate of a basin. This script not depends of the rest of the methodology, excepting of the *script 1*, which must be run before.
+ 
 
 #### 3. Output_data directory
 
@@ -74,6 +78,8 @@ In addition to the created files explained above, which are created during the w
 
 * **R4_Groundwater_contribution_basin.csv** Contains the same information that **4_groundwater_results.csv**, the results of the groundwater contrivution estimation.
 
+An specific folder for weather data outputs (*Weather_outputs*) is included, which can be created using the **Script 6**. This folder contain weather data extracted for a certain period and figures created with this data.
+
 
 #### 4. Figures directory
 
@@ -83,6 +89,8 @@ In addition to the created files explained above, which are created during the w
 ### Instructions for the user
 
 In the manuscript the instructions for reproducing this work can be found. In this section the main workflow will be explained in brief. 
+
+**Open the R Project** will be necessary to access to the different files (*HydRoVars.Rproj*). Doing so, the main folder of the software will appear un the R Studio Files panel, and the different scripts can be easily opened from there.
 
 As inputs for making this assessments in other regions, the user would need to prepare:
 
