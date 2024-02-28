@@ -116,7 +116,7 @@ Sánchez Gómez A.: *HydRoVars: An R tool to collect hydrological variables*, Gi
 @misc{alejandrosgz2023,
   author  = {Alejandro Sánchez Gómez},
   note    = {GitHub Repository},
-  title   = {{Soft data collection for realistic hydrological modelling: a reproducible methodology developed in R for the Tagus River basin}},
+  title   = {{HydRoVars: An R tool to collect hydrological variables}},
   year    = {2023},
   url     = {https://github.com/alejandrosgz/HydRoVars},
   version = {1.0},
