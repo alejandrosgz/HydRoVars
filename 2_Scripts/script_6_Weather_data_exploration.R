@@ -322,7 +322,7 @@ monthly_data <- average_monthly_weather_tables %>% filter(bas == studied_basin)
   theme_bw()+
   labs(y= "Precipitation (mm/month)", text = element_text(size = 12))
 
-  monthly_data %>% 
+monthly_data %>% 
   select(-c(bas, pcp_ac)) %>% 
   mutate(Month = factor(month.abb[Month], levels = month.abb)) %>% 
   pivot_longer(., -c(Month), names_to = "Variable") %>% 
@@ -358,7 +358,7 @@ monthly_serie %>%
 
 # Temperature serie
 
-  monthly_serie %>% select(-pcp_ac) %>% 
+monthly_serie %>% select(-pcp_ac) %>% 
   
   # Filter using some period
   #  filter(year(Date) %in% 1990:2000) %>% 
@@ -370,7 +370,7 @@ monthly_serie %>%
   geom_ribbon(aes(ymin =  Tmin_mean, ymax = Tmax_mean), fill = "darkolivegreen3", alpha = 0.8)+
   geom_line(aes(y = Tmean_mean),linewidth = 1.2, color = "green4" )+
   theme_bw()+
-  labs(y= "Temperature (°C)", text = element_text(size = 12), x = "Year")+
+  labs(y= "Temperature (°C)", text = element_text(size = 12), x = "Basin")+
   ggtitle("Average annual mean, maximum and minimum temperature")
 
 
@@ -413,7 +413,7 @@ tmean_comp <-  tmp_comp %>%  mutate(Month = month.abb[Month]) %>%
   geom_line(aes(y = Tmean_mean),linewidth = 1.2, color = "green4" )+
   theme_bw()+
   facet_wrap(facets = "period", scales = "free_x")+
-  labs(y= "Temperature (°C)", text = element_text(size = 12), x = "Date")+
+  labs(y= "Temperature (°C)", text = element_text(size = 12), x = "Basin")+
   ggtitle("Average annual mean, maximum and minimum temperature")
 
 # PCP Comparison Time series
