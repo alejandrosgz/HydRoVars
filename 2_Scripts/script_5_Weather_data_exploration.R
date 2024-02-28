@@ -195,7 +195,7 @@ av_annual_data %>% mutate_at(c("Tmean_mean", "Tmax_mean", "Tmin_mean"), round, d
 
 # Plotting one or several variables
 # Ej. TMPs
-av_annual_data %>% 
+tmp_plot_basins <-av_annual_data %>% 
   pivot_longer(., -bas, names_to = "Variable") %>% 
   filter(Variable != "pcp_ac") %>% 
   ggplot(., aes(x = bas, y = value)) +
@@ -205,14 +205,24 @@ av_annual_data %>%
   theme_bw()+
   labs(y= "Temperature (°C)", fill = "Basin", text = element_text(size = 12), x = "Basin")
 
+tmp_plot_basins
+
 # Ej. PCP
-av_annual_data %>% 
+ av_annual_data %>% 
   pivot_longer(., -bas, names_to = "Variable") %>% 
   filter(Variable == "pcp_ac") %>% 
   ggplot(., aes(x = bas, y = value)) +
   geom_point(aes(color = bas), size = 5)+
   theme_bw()+
   labs(y= "Precipitation (mm/year)", color = "Basin", text = element_text(size = 12), x = "Basin")
+
+
+# User may want to save the created plots: To do so, a plot should be assigned to a variable  (variable -> plot), and then saved with the following code
+
+ggsave(plot = tmp_plot_basins, device = "png", 
+       filename = "3_Output_data/Weather_outputs/plot_tmp_basins.png",
+       width = 10, height = 8, dpi = 600)
+        
 
 
 ##### 4.2. Comparisson of the study period among basins at annual scale ####
@@ -283,10 +293,13 @@ annual_data %>% select(Year, pcp_ac) %>%
   ggplot(., aes(x = Year))+
   geom_bar(aes(y = pcp_ac), stat = "identity", fill = "deepskyblue", color = "darkblue")+
   geom_line(aes(y = mean(pcp_ac)), linetype = 2, linewidth = 0.7)+
-  theme_bw()
+  theme_bw()+
+  labs(y= "Precipitation (mm/year)", text = element_text(size = 12))
+
+
 
 # Temperatures variation
-annual_data %>% select(-pcp_ac) %>% 
+  annual_data %>% select(-pcp_ac) %>% 
   ggplot(., aes(x = Year))+
   geom_ribbon(aes(ymin =  Tmin_mean, ymax = Tmax_mean), fill = "darkolivegreen3", alpha = 0.8)+
   geom_line(aes(y = Tmean_mean),linewidth = 1.2, color = "green4" )+
@@ -300,7 +313,7 @@ annual_data %>% select(-pcp_ac) %>%
 monthly_data <- average_monthly_weather_tables %>% filter(bas == studied_basin)
 
 
-monthly_data %>% 
+  monthly_data %>% 
   select(Month, pcp_ac) %>% 
   mutate(Month = factor(month.abb[Month], levels = month.abb)) %>% 
   ggplot(., aes(x = Month, y = pcp_ac))+
@@ -393,7 +406,7 @@ tmean_comp <-  tmp_comp %>%  mutate(Month = month.abb[Month]) %>%
  
 
 # TMP Comparison Time series
-monthly_serie_periods %>% 
+  monthly_serie_periods %>% 
   select(-pcp_ac) %>%
   ggplot(., aes(x = Date))+
   geom_ribbon(aes(ymin =  Tmin_mean, ymax = Tmax_mean), fill = "darkolivegreen3", alpha = 0.8)+
