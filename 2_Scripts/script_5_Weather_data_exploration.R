@@ -7,9 +7,9 @@
 # is not possible due to the lack of streamflow data. Using the weather datasets mentioned in the methodology, weather variables can be calculated 
 # for the Spanish territory
 
-
-# The files created using the Script 1 are neccesary to run this script
-
+# In order to make this script independent from the others (and allow users which may not have streamflow 
+# data or just analyze climate in a polygon), some parts of the Script 1 are repeated here (but loading the
+# created files of Script 1 is also an option.
 
 # Used libraries
 library(readr)
@@ -20,9 +20,59 @@ library(gt)
 library(patchwork)
 
 
-study_period <- 1980:2018 # User action: Define the studied period. Weather data for this period will be extracted
 
-#### 1. Precipitation calculation ####
+#### 1. Loading or creating needed files #### User action
+
+# In case you create the files of Script 1, load the following file
+
+pcp_grid_points <-  read.csv("1_Used_files/Created_csv/2_ids_stations_file.csv") %>% arrange(., Basin_ID)  # File with IDs, names, and location of the grid points, and basins data  
+
+
+# If not, follow the next steps (Ignore if the file is already loaded
+
+      # FILE 1.- basins csv file
+      
+      # Input data: Shapefile with the delineated basins. 
+      basins <- read_sf("1_Used_files/GIS/Shapefiles/basins_studied.shp") %>% 
+        arrange(., id) %>% 
+        #Calculating area
+        mutate(area = as.numeric(st_area(.)) )
+      
+      
+      # FILE 2. Gauging points csv file
+      
+      #Input data: weather grid and delineated basins. NOTE THAT BOTH CRSs MUST BE THE SAME.
+      
+      # Grid points: Note that the IDs for precipitation and temperature stations is constant, and therefore only one file is necessary.
+      pcp_points <- read_sf("1_Used_files/GIS/Shapefiles/weather_grid_UTM.shp")
+      
+      # 2.1. Buffer created for basins (1 km distance)
+      
+      basins_buffer <- st_buffer(basins, dist = 1000) # User action: define buffer (m)
+      
+      # 2.2.Clipping grid points with the basins buffer (region column is not necessary)
+      
+      grid_points_clip <- st_intersection(pcp_points, basins_buffer[, c("id", "Basin", "geometry")])
+      
+      
+      # Visualize selected points
+      ggplot()+
+        geom_sf(data = basins, aes(fill = as.factor(id)), linewidth = 1)+ 
+        geom_sf(data = basins_buffer, fill = "transparent", linetype = 2, linewidth = 0.7)+
+        guides(fill = "none")+ 
+        geom_sf(data = grid_points_clip, size = 2)+
+        scale_shape_manual(values = c(1, 16))+
+        theme_bw()
+
+      
+      pcp_grid_points <- grid_points_clip %>% st_drop_geometry()%>% rename(Basin_ID = id)
+
+
+
+#### 2. Precipitation calculation ####
+      
+      
+study_period <- 1980:2018 # User action: Define the studied period. Weather data for this period will be extracted
 
 path <- "1_Used_files/Data/weather_data/pcp_spain/" # Directory where the precipitation file for each point of the grid is located
 
@@ -31,13 +81,12 @@ init_date <- as.Date("1951-01-01")
 end_date <- as.Date("2019-12-31")
 dates <- seq(init_date, end_date, 1) # A sequence of dates for the entire period with data is created
 
-pcp_grid_points <-  read.csv("1_Used_files/Created_csv/2_ids_stations_file.csv") %>% arrange(., Basin_ID)  # File with IDs, names, and location of the grid points, and basins data  
 
 # Loop for calculating the annual precipitation of each basin trough the average of the annual precipitation for each station within the basin
 pcp_bas_list <- list() #empty list
 for(i in 1:length(unique(pcp_grid_points$Basin_ID))){  # i --> Basin ID
   filt_st <- filter(pcp_grid_points, Basin_ID == i) # Basin data and precipitations points inside
-  stations <- filt_st[,1] #Precipitations points inside each basin
+  stations <- filt_st$ID #Precipitations points inside each basin
   pcps_sts <- c()
   for(n in 1:length(stations)){   # n --> Weather stations identifier within each basin
     st_dat <- read_table(paste(path, stations[n], "_PCP.txt", sep = ""), skip = 1, col_names = F) %>% #read the precipitation file for each point
@@ -68,7 +117,7 @@ for (i in 1:length(pcp_bas_list)) {
 basins_pcp # Table with daily pcp for every basin
 
 
-#### 2. Temperature calculation ####
+#### 3. Temperature calculation ####
 
 # User action: Define the starting and ending dates for the weather data
 init_date <- as.Date("1951-01-01")
@@ -126,7 +175,7 @@ for (i in 1:length(tmp_bas_list)) {
 }
 
 
-#### 3.Working and saving the obtained data ####
+#### 4.Working and saving the obtained data ####
 
 # Merging TMP and PCP tables
 daily_weather_tables <- basins_tmp %>% rename(date = Date) %>%  
@@ -175,10 +224,10 @@ average_monthly_weather_tables <- daily_weather_tables %>%
   select(., -c(  `year(date)`))
 
 
-#### 4. Weather data analysis ####
+#### 5. Weather data analysis ####
 
 
-##### 4.1. Average annual values for all the basins #####
+##### 5.1. Average annual values for all the basins #####
 
 av_annual_data <- annual_weather_tables %>% group_by(bas) %>% 
   summarise_all(., mean) %>% select(., -Year)
@@ -225,7 +274,7 @@ ggsave(plot = tmp_plot_basins, device = "png",
         
 
 
-##### 4.2. Comparisson of the study period among basins at annual scale ####
+##### 5.2. Comparisson of the study period among basins at annual scale ####
 
 annual_weather_tables %>% 
   pivot_longer(., -c(Year, bas), names_to = "Variable") %>% 
@@ -248,7 +297,7 @@ annual_weather_tables %>%
   labs(y= "Precipitation (mm/year)", fill = "Basin", text = element_text(size = 12), x = "Basin")
 
 
-##### 4.3. Analysing weather for each subbasin #####
+##### 5.3. Analysing weather for each subbasin #####
 
 # An analysis of weather variables for each subbasin can be done at different scales. 
 # Some examples are included, but users might want to perform different analysis

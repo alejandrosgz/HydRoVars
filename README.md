@@ -63,7 +63,7 @@ The code for reproducing all the results of the paper can be found in the folder
  
  * **script_4_Groundwater_contribution_estimation.R** Include all the code necessary to apply the baseflow filter for three peaks in each subbasin and calculate the groundwater contribution to the streamflow. 
  
- * **script_5_Weather_data_exploration.R** This script can be ignored if weather data analysis is not in our scope. It allow to obtain, export and analyze weather data at different scales, and migth be very useful to characterize the climate of a basin. This script not depends of the rest of the methodology, excepting of the *script 1*, which must be run before.
+ * **script_5_Weather_data_exploration.R** This script can be ignored if weather data analysis is not in our scope. It allow to obtain, export and analyze weather data at different scales, and might be very useful to characterize the climate of a basin. This script not depends of the rest of the methodology, since the needed parts of *script 1* are also included.
  
 
 #### 3. Output_data directory

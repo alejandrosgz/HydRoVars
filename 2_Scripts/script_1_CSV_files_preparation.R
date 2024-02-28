@@ -9,7 +9,7 @@
    library(sf)
    library(tidyverse)
 
-   # Environment: set working directory to the main folder of the repository
+   # Environment: set working directory to the main folder of the repository if you are in other working directory
 
    #setwd("......\Soft_data_collection_methodology")
    
