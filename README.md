@@ -110,7 +110,7 @@ The content of this repository is licensed under the [MIT License](https://githu
 
 **Note**: This project is currently work in progress and the manuscript is about to be submitted. Please check the citation at a later time for updates.
 
-Sánchez Gómez A.: *Soft data collection for realistic hydrological modelling: a reproducible methodology developed in R for the Tagus River basin*, GitHub Repository, https://github.com/alejandrosgz/Hydro_vars_collection, 2023.
+Sánchez Gómez A.: *HydRoVars: An R tool to collect hydrological variables*, GitHub Repository, https://github.com/alejandrosgz/HydRoVars, 2023.
 
 ```
 @misc{alejandrosgz2023,
@@ -118,7 +118,7 @@ Sánchez Gómez A.: *Soft data collection for realistic hydrological modelling: 
   note    = {GitHub Repository},
   title   = {{Soft data collection for realistic hydrological modelling: a reproducible methodology developed in R for the Tagus River basin}},
   year    = {2023},
-  url     = {https://github.com/alejandrosgz/Hydro_vars_collection},
+  url     = {https://github.com/alejandrosgz/HydRoVars},
   version = {1.0},
 }
 ```
