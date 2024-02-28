@@ -299,12 +299,12 @@ annual_data %>% select(Year, pcp_ac) %>%
 
 
 # Temperatures variation
-  annual_data %>% select(-pcp_ac) %>% 
+ p <-    annual_data %>% select(-pcp_ac) %>% 
   ggplot(., aes(x = Year))+
   geom_ribbon(aes(ymin =  Tmin_mean, ymax = Tmax_mean), fill = "darkolivegreen3", alpha = 0.8)+
   geom_line(aes(y = Tmean_mean),linewidth = 1.2, color = "green4" )+
   theme_bw()+
-  labs(y= "Temperature (°C)", text = element_text(size = 12), x = "Basin")+
+  labs(y= "Temperature (°C)", text = element_text(size = 12), x = "Year")+
   ggtitle("Average annual mean, maximum and minimum temperature")
 
 

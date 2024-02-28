@@ -22,7 +22,7 @@
    basins_csv <- basins %>% rename(Basin_ID = id) %>% 
    #Calculating area
    mutate(area = st_area(.)) %>% 
-   # Introducing the gauging stations codes (Manually) # User action: Introduce the gauging stations code
+   # Introducing the gauging stations codes (Manually) # User action: Introduce the gauging stations code. # Introduce NA if there is no aguging statoin but you want to evaluate climate with Script 6
    mutate(gauging_code = c(3231, 3049, 3211, 3001, 3045, 3040,
                            3249, 3172, 3193, 3251, 3030, 3173,
                            3164, 3165, 3212, 3268, 3237, 3186 , 3060)) %>% 
