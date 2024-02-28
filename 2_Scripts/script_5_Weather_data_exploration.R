@@ -26,7 +26,7 @@ library(patchwork)
 # In case you create the files of Script 1, load the following file
 
 pcp_grid_points <-  read.csv("1_Used_files/Created_csv/2_ids_stations_file.csv") %>% arrange(., Basin_ID)  # File with IDs, names, and location of the grid points, and basins data  
-
+basins <- read_sf("1_Used_files/GIS/Shapefiles/basins_studied.shp")
 
 # If not, follow the next steps (Ignore if the file is already loaded
 
@@ -232,10 +232,15 @@ average_monthly_weather_tables <- daily_weather_tables %>%
 av_annual_data <- annual_weather_tables %>% group_by(bas) %>% 
   summarise_all(., mean) %>% select(., -Year)
 
-av_annual_data %>% mutate_at(c("Tmean_mean", "Tmax_mean", "Tmin_mean"), round, digits = 2) %>% 
+av_annual_data %>% 
   mutate(pcp_ac = round(pcp_ac, 0)) %>% 
+  left_join(., basins[, c("id", "area")], c("bas" = "id")) %>% 
+     mutate(rwn_wr_hm = pcp_ac*area/1e9) %>% 
+  select(-c(area, geometry)) %>% 
+  mutate_at(c("Tmean_mean", "Tmax_mean", "Tmin_mean", "rwn_wr_hm"), round, digits = 2) %>% 
   rename("Basin ID" = "bas",
-   "Annual precipitation (mm)" = "pcp_ac", 
+   "Annual precipitation (mm)" = "pcp_ac",
+   "Renewable water resources (hm³)" = "rwn_wr_hm",
    "Average mean temperature (°C)" = "Tmean_mean", 
    "Average maximum temperature (°C)" = "Tmax_mean", 
    "Average minimum temperature (°C)" = "Tmin_mean") %>% 
@@ -265,6 +270,17 @@ tmp_plot_basins
   theme_bw()+
   labs(y= "Precipitation (mm/year)", color = "Basin", text = element_text(size = 12), x = "Basin")
 
+ 
+ #Ej. Renewable water resources
+ 
+ av_annual_data %>% left_join(., basins[, c("id", "area")], c("bas" = "id")) %>% 
+   select(bas, pcp_ac, area) %>% 
+   mutate(rwn_wr_hm = pcp_ac*area/1e9) %>% 
+   ggplot(., aes(x = bas, y = rwn_wr_hm)) +
+   geom_point(aes(color = factor(bas, levels = as.character(1:19)), size = rwn_wr_hm))+
+   theme_bw()+
+   labs(y= "Renewable water resources (hm³/year)", color = "Basin", text = element_text(size = 12), x = "Basin", size = "RWR (hm³/y)")+
+   theme(legend.position = "bottom")
 
 # User may want to save the created plots: To do so, a plot should be assigned to a variable  (variable -> plot), and then saved with the following code
 
@@ -276,6 +292,7 @@ ggsave(plot = tmp_plot_basins, device = "png",
 
 ##### 5.2. Comparisson of the study period among basins at annual scale ####
 
+# Tmps
 annual_weather_tables %>% 
   pivot_longer(., -c(Year, bas), names_to = "Variable") %>% 
   filter(Variable != "pcp_ac") %>% 
@@ -286,7 +303,7 @@ annual_weather_tables %>%
   theme_bw()+
   labs(y= "Temperature (°C)", fill = "Basin", text = element_text(size = 12), x = "Basin")
 
-
+# Pcp
 annual_weather_tables %>% 
   pivot_longer(., -c(Year, bas), names_to = "Variable") %>% 
   filter(Variable == "pcp_ac") %>% 
@@ -295,6 +312,18 @@ annual_weather_tables %>%
   geom_point(aes(y = value), shape = 1)+
   theme_bw()+
   labs(y= "Precipitation (mm/year)", fill = "Basin", text = element_text(size = 12), x = "Basin")
+
+# RWRs
+p <- annual_weather_tables %>% 
+  left_join(., basins[, c("id", "area")], c("bas" = "id")) %>% 
+  select(bas, pcp_ac, area) %>% 
+  mutate(rwn_wr_hm = pcp_ac*area/1e9) %>% 
+  ggplot(., aes(x = bas))+
+  geom_boxplot(aes(group = bas, y = rwn_wr_hm, fill = factor(bas, levels = as.character(1:19))))+
+  geom_point(aes(y = rwn_wr_hm), shape = 1)+
+  theme_bw()+theme(text = element_text(size = 12))+
+  labs(y= "Renewable water resources (hm³/year)", fill = "Basin", text = element_text(size = 12), x = "Basin")+
+  ggtitle("Renewable water resources distribution 1980-2018 (hm³/year)")
 
 
 ##### 5.3. Analysing weather for each subbasin #####
