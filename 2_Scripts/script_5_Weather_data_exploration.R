@@ -46,6 +46,19 @@ basins <- read_sf("1_Used_files/GIS/Shapefiles/basins_studied.shp")
       # Grid points: Note that the IDs for precipitation and temperature stations is constant, and therefore only one file is necessary.
       pcp_points <- read_sf("1_Used_files/GIS/Shapefiles/weather_grid_UTM.shp")
       
+      
+      # If CRS is not the same, CRS of the studied area is changed
+      
+      if( st_crs(pcp_points) == st_crs(basins)){
+        print("CRSs was the same")
+      } else { 
+        basins <- sf::st_transform(basins, crs =  st_crs(pcp_points))
+        print("Study area CRS was modified")
+      }
+      
+      
+      
+      
       # 2.1. Buffer created for basins (1 km distance)
       
       basins_buffer <- st_buffer(basins, dist = 1000) # User action: define buffer (m)
