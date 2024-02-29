@@ -90,17 +90,19 @@ An specific folder for weather data outputs (*Weather_outputs*) is included, whi
 
 In the manuscript the instructions for reproducing this work can be found. In this section the main workflow will be explained in brief. 
 
-**Open the R Project** will be necessary to access to the different files (*HydRoVars.Rproj*). Doing so, the main folder of the software will appear un the R Studio Files panel, and the different scripts can be easily opened from there.
+**Open the R Project** will be necessary to access to the different files (*HydRoVars.Rproj*). Doing so, the main folder of the software will appear in the R Studio Files panel, and the different scripts can be easily opened from there.
 
-As inputs for making this assessments in other regions, the user would need to prepare:
+As inputs for making this assessment in other regions, the user would need to prepare:
 
-* A vector file with the basins to be assessed. Instructions for delineating subbasins can be found in the GRASS module documentation (r.watershed, r.water.outlet and r.to.vect tools). It is recommended to adjust the fields of this layer in order to control the order to calculate the variables, i.e., indicating the name and creating IDs if multiple basins will be assessed. The code of the gauging station for each subbasin have to be included in this vector file or in the csv that it is created from it using the **Script 1**.
+* A vector file with the basins to be assessed. Instructions for delineating subbasins can be found in the GRASS module documentation (r.watershed, r.water.outlet and r.to.vect tools). It is recommended to adjust the fields of this layer to control the order when calculating the variables, i.e., indicating the name and creating IDs if multiple basins will be assessed. The code of the gauging station for each subbasin have to be included in this vector file or in the csv that it is created from it using the **Script 1**.
 
-* A vector file with the weather data. In this case, a grid has been used, but this is not strictly necessary. Note that, if no grid is used, the average values of the points may not be accurately interpolated. If precipitation and temperature points/stations are not coincident, two files may be used. A csv file with the points located within a buffer for each assessed basin can be created using the **Script 1**.
+* A vector file with the weather data points. In this case, a grid has been used, but this is not strictly necessary. Note that, if no grid is used, the average values of the points may not be accurately interpolated. If precipitation and temperature points/stations are not coincident, two files may be used. A csv file with the points located within a buffer for each assessed basin can be created using the **Script 1**.
 
 If these files are prepared in the same way as in the example, the **Script 2** will work  automatically. In the example case, the subbasins have been grouped by geological regions, but any other characteristic or none can be used. Runoff coefficients will be generated at annual and average basis for the chosen period.
 
 For reproducing the groundwater assessment, as it has been done manually, the user should follow the presented steps, but adapting the code for its streamflow data. This applies for **Scripts 3 and 4**. It is recommended to create csv files with the results obtained with these scripts, as it has been done in the example.
+
+If the user only wants to perfrom a weather data anaylsis, only the *Script 6* is neccessary. This script allows to estimate for any polygon weather variables and produce plots. Using the weather data source used in this work (https://swat.tamu.edu/data/spain/), data for the entire Spanish territory (5x5 km resolution, daily scale, 1951-2019) can be used.
 
 ### License
 
