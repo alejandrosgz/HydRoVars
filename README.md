@@ -8,6 +8,9 @@ In hydrology soft data can be used to characterize the hydrological behavior of 
 
 In this work, we present a soft data collection methodology to obtain soft data from available weather and streamflow data, while focusing on two variables: the runoff coefficient and the baseflow index. This methodology can be reproduced for any gauged catchment in Spain, and can be also used for any other region with similar available datasets. The upper part of the Tagus River basin has been used as study case, evaluating the two variables runoff coefficient and baseflow index in 19 subbasins of the Tagus River in different geological regions.
 
+![]([https://github.com/Your_Repository_Name/Your_GIF_Name.gif](https://github.com/alejandrosgz/HydRoVars/blob/main/4_Figures/gif_BFImax_parameter.gif))
+![](https://github.com/alejandrosgz/HydRoVars/blob/main/3_Output_data/Weather_outputs/plot_rwrs_dist.png)
+
 In spite of the focus of this work is to collect hydrological variables, data and code to collect, analyse and represent weather (precipitation and temperature) data has been also included. This allow to work at cactment scale, but also analyze weather variables in any study area desired (introduced as a shapefile).
 
 
