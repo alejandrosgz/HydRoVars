@@ -15,7 +15,7 @@ In this work, we present a soft data collection methodology to obtain soft data 
 
 ![](https://github.com/alejandrosgz/HydRoVars/blob/main/4_Figures/gif_BFImax_parameter.gif)
 
-In spite of the main focus of this work is to collect hydrological variables, data and code to collect, analyse and represent weather (precipitation and temperature) data has been also included. This allow to work at cactment scale, but also analyze weather variables in any study area desired (introduced as a shapefile).
+In spite of the main focus of this work is to collect hydrological variables, data and code to collect, analyse and represent weather (precipitation and temperature) data has been also included. It allows to work at cactment scale, but also analyze weather variables in any study area desired (introduced as a shapefile).
 
 ![](https://github.com/alejandrosgz/HydRoVars/blob/main/3_Output_data/Weather_outputs/plot_tmp_basin_1_anual.png)
 
