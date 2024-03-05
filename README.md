@@ -1,13 +1,9 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
+
 # HydRoVars: An R tool to collect hydrological variables
 
 This is the accompanying code repository for the manuscript *"HydRoVars: An R tool to collect hydrological variables."*. The repository contains the data and code which were used to perform the soft-data collection methodology presented in the manuscript. Feel free to use the methodology or any parts of the code, but please make sure to cite our work (see [License](#license) and [Citation](#citation)).
 
-![](https://github.com/alejandrosgz/HydRoVars/blob/main/4_Figures/graphical_abstract.png)
+![](https://github.com/alejandrosgz/HydRoVars/blob/main/4_Figures/Graphical_abstract.png)
 
 ### Purpose and utility
 
