@@ -5,6 +5,8 @@ This is the accompanying code repository for the manuscript *"HydRoVars: An R to
 
 ![](https://github.com/alejandrosgz/HydRoVars/blob/main/4_Figures/Graphical_abstract.png)
 
+To use HydRoVars, this repository should be downloaded and unzipped. Then, it is recommended to open the R environment using the *HydRoVars.Rproj* file, which will allow to set up the working directory. Input files similar to the ones of the *1_Used_files* folder should be prepared for other study areas. 
+
 ### Purpose and utility
 
 In hydrology soft data can be used to characterize the hydrological behavior of a basin or region and can therefore be used in the soft calibration process for a hydrological model setup of a basin. In countries such as Spain there are several potential sources for collecting soft data for the entire territory, such as weather and hydrological data. Yet, studies which include soft data in hydrological modeling are few and often limited to small areas and short time series. 
@@ -120,14 +122,14 @@ The content of this repository is licensed under the [MIT License](https://githu
 
 **Note**: This project is currently work in progress and the manuscript is about to be submitted. Please check the citation at a later time for updates.
 
-Sánchez Gómez A.: *HydRoVars: An R tool to collect hydrological variables*, GitHub Repository, https://github.com/alejandrosgz/HydRoVars, 2023.
+Sánchez-Gómez A. (2024). *HydRoVars: An R tool to collect hydrological variables*, GitHub Repository, https://github.com/alejandrosgz/HydRoVars.
 
 ```
-@misc{alejandrosgz2023,
+@misc{alejandrosgz2024,
   author  = {Alejandro Sánchez Gómez},
   note    = {GitHub Repository},
   title   = {{HydRoVars: An R tool to collect hydrological variables}},
-  year    = {2023},
+  year    = {2024},
   url     = {https://github.com/alejandrosgz/HydRoVars},
   version = {1.0},
 }
